@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"giveaway/client"
 	"giveaway/client/api"
 	"giveaway/client/web"
 	"giveaway/data"
@@ -20,13 +21,13 @@ import (
 )
 
 type Entry struct {
-	Key		string
-	Value 	interface{}
+	Key   string
+	Value interface{}
 }
 
 type RandomEntryTask struct {
-	data 		[]Entry
-	dupes		map[string][]int
+	data      []Entry
+	dupes     map[string][]int
 	keyGetter func(interface{}) string
 }
 
@@ -68,6 +69,10 @@ func (t *RandomEntryTask) Length() int {
 	return len(t.data)
 }
 
+func (t *RandomEntryTask) LengthNoDuplicates() int {
+	return len(t.dupes)
+}
+
 var logger *utils.Logger = nil
 
 func GetLogger() *utils.Logger {
@@ -77,8 +82,42 @@ func GetLogger() *utils.Logger {
 	return logger
 }
 
+func filterWinner(ret *RandomEntryTask, rules []client.IRule) (int, interface{}) {
+	max := ret.LengthNoDuplicates()
+	i := 0
+	for {
+		winnerId := ret.GetRandomIndexNoDuplicates()
+		temp := ret.Get(winnerId).Value
+		for _, rule := range rules {
+			if shouldChoose, _ := rule.Validate(temp); shouldChoose {
+				return winnerId, ret.Get(winnerId).Value
+			}
+		}
+		i++
+		if i >= max {
+			return -1, nil
+		}
+	}
+}
+
+func filterWinnerHashTag(ret *RandomEntryTask, rules []client.IRule) *data.TagMedia {
+	_, t := filterWinner(ret, rules)
+	if t != nil {
+		return t.(*data.TagMedia)
+	}
+	return nil
+}
+
+func filterWinnerComment(ret *RandomEntryTask, rules []client.IRule) (int, *data.Comment) {
+	i, t := filterWinner(ret, rules)
+	if t != nil {
+		return i, t.(*data.Comment)
+	}
+	return -1, nil
+}
+
 func execPosts(task *data.HashTagTask, db *mongo.Database, rules utils.RuleCollection) {
-	cl := web.NewWebClient(&utils.UserAgentGenerator{},"http://localhost:8888")
+	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
 	ret := RandomEntryTask{make([]Entry, 0), make(map[string][]int, 0), func(e interface{}) string {
@@ -88,9 +127,9 @@ func execPosts(task *data.HashTagTask, db *mongo.Database, rules utils.RuleColle
 	cl.QueryTag(task.HashTag, func(media data.TagMedia) bool {
 		var shouldAdd = true
 		var err error = nil
-		for _, rule := range rules.Data() {
+		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&media)
-			switch /*e := */err.(type) {
+			switch /*e := */ err.(type) {
 			case errors.ShouldStopIterationError:
 				return false
 			}
@@ -100,13 +139,16 @@ func execPosts(task *data.HashTagTask, db *mongo.Database, rules utils.RuleColle
 		}
 		return true
 	})
-	winnerId := ret.GetRandomIndexNoDuplicates()
-	winner := ret.Get(winnerId).Value.(*data.TagMedia)
 
-	task.Post = winner
-	task.Status = "complete"
+	winner := filterWinnerHashTag(&ret, rules.SelectRules())
+	if winner != nil {
+		task.Post = winner
+		task.Status = "complete"
+	} else {
+		task.Status = "cannot_decide_winner"
+	}
 
-	res, err := db.Collection("HashTagTasks").UpdateOne(nil, bson.M{"_id": bsonx.ObjectID(task.Id)}, bson.M{ "$set": task })
+	res, err := db.Collection("HashTagTasks").UpdateOne(nil, bson.M{"_id": bsonx.ObjectID(task.Id)}, bson.M{"$set": task})
 	if res.ModifiedCount == 0 {
 		panic(fmt.Errorf("not found"))
 	}
@@ -116,7 +158,7 @@ func execPosts(task *data.HashTagTask, db *mongo.Database, rules utils.RuleColle
 }
 
 func execComments(task *data.CommentsTask, db *mongo.Database, rules utils.RuleCollection) {
-	cl := web.NewWebClient(&utils.UserAgentGenerator{},"http://localhost:8888")
+	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
 	ret := RandomEntryTask{make([]Entry, 0), make(map[string][]int, 0), func(e interface{}) string {
@@ -125,9 +167,9 @@ func execComments(task *data.CommentsTask, db *mongo.Database, rules utils.RuleC
 	cl.QueryComments(task.ShortCode, func(comment data.Comment) bool {
 		var shouldAdd = true
 		var err error = nil
-		for _, rule := range rules.Data() {
+		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&comment)
-			switch /*e := */err.(type) {
+			switch /*e := */ err.(type) {
 			case errors.ShouldStopIterationError:
 				return false
 			}
@@ -137,26 +179,31 @@ func execComments(task *data.CommentsTask, db *mongo.Database, rules utils.RuleC
 		}
 		return true
 	})
-	winnerId := ret.GetRandomIndexNoDuplicates()
-	winner := ret.Get(winnerId).Value.(*data.Comment)
-	above := make([]*data.Comment, 0)
-	below := make([]*data.Comment, 0)
 
-	for i := winnerId - 1; i >= 0 && i >= winnerId - 2; i-- {
-		above = append([]*data.Comment{ret.Get(i).Value.(*data.Comment)}, above...)
+	winnerId, winner := filterWinnerComment(&ret, rules.SelectRules())
+
+	if winner != nil {
+		above := make([]*data.Comment, 0)
+		below := make([]*data.Comment, 0)
+
+		for i := winnerId - 1; i >= 0 && i >= winnerId-2; i-- {
+			above = append([]*data.Comment{ret.Get(i).Value.(*data.Comment)}, above...)
+		}
+		for i := winnerId + 1; i < len(ret.data) && i <= winnerId+2; i++ {
+			below = append(below, ret.Get(i).Value.(*data.Comment))
+		}
+
+		task.Winner = winner
+		task.Above = above
+		task.Below = below
+
+		task.Position = winnerId
+		task.Status = "complete"
+	} else {
+		task.Status = "cannot_decide_winner"
 	}
-	for i := winnerId + 1; i < len(ret.data) && i <= winnerId + 2; i++ {
-		below = append(below, ret.Get(i).Value.(*data.Comment))
-	}
 
-	task.Winner = winner
-	task.Above = above
-	task.Below = below
-
-	task.Position = winnerId
-	task.Status = "complete"
-
-	res, err := db.Collection("CommentTasks").UpdateOne(nil, bson.M{"_id": bsonx.ObjectID(task.Id)}, bson.M{ "$set": task })
+	res, err := db.Collection("CommentTasks").UpdateOne(nil, bson.M{"_id": bsonx.ObjectID(task.Id)}, bson.M{"$set": task})
 	if res.ModifiedCount == 0 {
 		panic(fmt.Errorf("not found"))
 	}
@@ -166,26 +213,26 @@ func execComments(task *data.CommentsTask, db *mongo.Database, rules utils.RuleC
 }
 
 type HasRulesJsonRequest struct {
-	Rules	utils.RuleCollection	`json:"rules"`
+	Rules utils.RuleCollection `json:"rules"`
 }
 
 type CommentTaskJsonRequest struct {
-	HasRulesJsonRequest				`json:",inline" bson:",inline"`
-	ShortCode	string				`json:"shortcode" bson:"shortcode"`
+	HasRulesJsonRequest `json:",inline" bson:",inline"`
+	ShortCode           string `json:"shortcode" bson:"shortcode"`
 }
 
 type HashTagTaskJsonRequest struct {
-	HasRulesJsonRequest				`json:",inline" bson:",inline"`
-	HashTag		string				`json:"hashtag" bson:"hashtag"`
+	HasRulesJsonRequest `json:",inline" bson:",inline"`
+	HashTag             string `json:"hashtag" bson:"hashtag"`
 }
 
 type HasStatusJsonResponse struct {
-	Status		bool				`json:"status" bson:"status"`
+	Status bool `json:"status" bson:"status"`
 }
 
 type NotFoundJsonResponse struct {
-	HasStatusJsonResponse			`json:",inline"`
-	Error		string				`json:"error"`
+	HasStatusJsonResponse `json:",inline"`
+	Error                 string `json:"error"`
 }
 
 func NewNotFoundJsonResponse() NotFoundJsonResponse {
@@ -196,8 +243,8 @@ func NewNotFoundJsonResponse() NotFoundJsonResponse {
 }
 
 type ValidationErrorJsonResponse struct {
-	HasStatusJsonResponse			`json:",inline"`
-	Error		string				`json:"error"`
+	HasStatusJsonResponse `json:",inline"`
+	Error                 string `json:"error"`
 }
 
 func NewValidationErrorJsonResponse() ValidationErrorJsonResponse {
@@ -208,8 +255,8 @@ func NewValidationErrorJsonResponse() ValidationErrorJsonResponse {
 }
 
 type SuccessfulCommentsTaskJsonResponse struct {
-	HasStatusJsonResponse			`json:",inline"`
-	Result		data.CommentsTask	`json:"result"`
+	HasStatusJsonResponse `json:",inline"`
+	Result                data.CommentsTask `json:"result"`
 }
 
 func NewSuccessfulCommentsTaskJsonResponse(task data.CommentsTask) SuccessfulCommentsTaskJsonResponse {
@@ -220,8 +267,8 @@ func NewSuccessfulCommentsTaskJsonResponse(task data.CommentsTask) SuccessfulCom
 }
 
 type SuccessfulHashTagTaskJsonResponse struct {
-	HasStatusJsonResponse			`json:",inline"`
-	Result		data.HashTagTask	`json:"result"`
+	HasStatusJsonResponse `json:",inline"`
+	Result                data.HashTagTask `json:"result"`
 }
 
 func NewSuccessfulHashTagTaskJsonResponse(task data.HashTagTask) SuccessfulHashTagTaskJsonResponse {
@@ -237,7 +284,7 @@ func SafeSend(ch chan int, value int) (closed bool) {
 			closed = false
 		}
 	}()
-	ch <- value  // panic if ch is closed
+	ch <- value // panic if ch is closed
 	return true // <=> closed = false; return
 }
 
@@ -312,7 +359,7 @@ func main() {
 						task.ShortCode = req.ShortCode
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						_ ,err = db.Collection("CommentTasks").InsertOne(nil, task)
+						_, err = db.Collection("CommentTasks").InsertOne(nil, task)
 
 						if err != nil {
 							panic(err)
@@ -356,7 +403,7 @@ func main() {
 						task.HashTag = req.HashTag
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						_ ,err = db.Collection("HashTagTasks").InsertOne(nil, task)
+						_, err = db.Collection("HashTagTasks").InsertOne(nil, task)
 
 						if err != nil {
 							panic(err)

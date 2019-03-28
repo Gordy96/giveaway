@@ -6,14 +6,21 @@ import (
 	"giveaway/data/errors"
 )
 
-type ConstructorFunc	func(interface{}) client.IRule
+type RuleType int
+
+const (
+	AppendRule RuleType = iota
+	SelectRule RuleType = AppendRule + 1
+)
+
+type ConstructorFunc func(interface{}) (RuleType, client.IRule)
 type RuleConstructorMap map[string]ConstructorFunc
 
 var constructorMap = RuleConstructorMap{
-	"DateRule": func(i interface{}) client.IRule {
+	"DateRule": func(i interface{}) (RuleType, client.IRule) {
 		tArr := i.(map[string]interface{})["limits"].([]interface{})
 		rule := &DateRule{"DateRule", [2]int32{int32(tArr[0].(float64)), int32(tArr[1].(float64))}}
-		return rule
+		return AppendRule, rule
 	},
 }
 
@@ -24,15 +31,16 @@ func RegisterRuleConstructor(set RuleConstructorMap) {
 }
 
 type RuleCollection struct {
-	data []client.IRule
+	appendingRules []client.IRule
+	selectRules    []client.IRule
 }
 
-func (r *RuleCollection) Data() []client.IRule {
-	return r.data
+func (r *RuleCollection) AppendRules() []client.IRule {
+	return r.appendingRules
 }
 
-func (r *RuleCollection) Get(i int) client.IRule {
-	return r.data[i]
+func (r *RuleCollection) SelectRules() []client.IRule {
+	return r.selectRules
 }
 
 func (r *RuleCollection) getConstructorFor(s map[string]interface{}) ConstructorFunc {
@@ -45,7 +53,12 @@ func (r *RuleCollection) UnmarshalJSON(b []byte) error {
 	json.Unmarshal(b, &raw)
 	for _, entry := range raw {
 		if e := r.getConstructorFor(entry); e != nil {
-			r.data = append(r.data, e(entry))
+			switch t, rule := e(entry); t {
+			case AppendRule:
+				r.appendingRules = append(r.appendingRules, rule)
+			case SelectRule:
+				r.selectRules = append(r.selectRules, rule)
+			}
 		} else {
 			return errors.UnknownRuleError{}
 		}
@@ -55,8 +68,8 @@ func (r *RuleCollection) UnmarshalJSON(b []byte) error {
 }
 
 type DateRule struct {
-	Name 	string				`json:"name"`
-	Limits 	[2]int32			`json:"limits"`
+	Name   string   `json:"name"`
+	Limits [2]int32 `json:"limits"`
 }
 
 func (d DateRule) GetName() string {
@@ -75,8 +88,8 @@ func (d DateRule) Validate(i interface{}) (bool, error) {
 }
 
 type FollowingRule struct {
-	Name 	string				`json:"name"`
-	Id		string				`json:""`
+	Name string `json:"name"`
+	Id   string `json:""`
 }
 
 func (f FollowingRule) GetName() string {

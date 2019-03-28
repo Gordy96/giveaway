@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4c6f766d-277f-4492-9ae4-44a2cd73406f" name="Default Changelist" comment="" />
+    <list default="true" id="4c6f766d-277f-4492-9ae4-44a2cd73406f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/rules.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/rules.go" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,7 +27,7 @@
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="gitignore" value="1" />
-          <entry key="go" value="224" />
+          <entry key="go" value="225" />
           <entry key="json" value="7" />
           <entry key="raw" value="1" />
           <entry key="s" value="3" />
@@ -33,7 +37,7 @@
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Go" value="224" />
+          <entry key="Go" value="225" />
           <entry key="JSON" value="7" />
           <entry key="PLAIN_TEXT" value="6" />
           <entry key="x86 Plan9 Assembly" value="3" />
@@ -41,26 +45,26 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="gitignore" value="21" />
-          <entry key="go" value="25314" />
+          <entry key="gitignore" value="25" />
+          <entry key="go" value="26221" />
           <entry key="txt" value="52" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Go" value="25314" />
-          <entry key="PLAIN_TEXT" value="73" />
+          <entry key="Go" value="26221" />
+          <entry key="PLAIN_TEXT" value="77" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="49">
-              <caret line="243" column="13" selection-start-line="243" selection-start-column="13" selection-end-line="243" selection-end-column="13" />
+            <state relative-caret-position="366">
+              <caret line="202" column="44" selection-start-line="202" selection-start-column="44" selection-end-line="202" selection-end-column="44" />
               <folding>
                 <element signature="e#14#352#0" expanded="true" />
                 <element signature="e#365#408#0" />
@@ -79,44 +83,14 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/instagram/commands/commands.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="16" lean-forward="true" selection-start-column="16" selection-end-column="16" />
-              <folding>
-                <element signature="e#18#93#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/utils/rules.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="636">
-              <caret line="86" column="4" lean-forward="true" selection-start-line="86" selection-start-column="6" selection-end-line="92" selection-end-column="7" />
+            <state relative-caret-position="289">
+              <caret line="56" column="52" selection-start-line="56" selection-start-column="52" selection-end-line="56" selection-end-column="52" />
               <folding>
                 <element signature="e#15#85#0" expanded="true" />
                 <element signature="n#!!block;n#GetName#0" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/client/web/comment_cursor.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="102">
-              <caret line="21" column="1" selection-start-line="21" selection-start-column="1" selection-end-line="21" selection-end-column="1" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/.gitignore">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
-              <caret line="1" column="1" selection-start-line="1" selection-start-column="1" selection-end-line="1" selection-end-column="1" />
             </state>
           </provider>
         </entry>
@@ -190,10 +164,10 @@
         <option value="$PROJECT_DIR$/instagram/commands/commands.go" />
         <option value="$PROJECT_DIR$/instagram/solver.go" />
         <option value="$PROJECT_DIR$/instagram/solver/solver.go" />
-        <option value="$PROJECT_DIR$/utils/rules.go" />
-        <option value="$PROJECT_DIR$/main.go" />
         <option value="$PROJECT_DIR$/client/web/comment_cursor.go" />
         <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/utils/rules.go" />
+        <option value="$PROJECT_DIR$/main.go" />
       </list>
     </option>
   </component>
@@ -220,51 +194,6 @@
             <path>
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
               <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="client" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="client" type="462c0819:PsiDirectoryNode" />
-              <item name="api" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="client" type="462c0819:PsiDirectoryNode" />
-              <item name="web" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="data" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="data" type="462c0819:PsiDirectoryNode" />
-              <item name="errors" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="instagram" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="instagram" type="462c0819:PsiDirectoryNode" />
-              <item name="account" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="instagram" type="462c0819:PsiDirectoryNode" />
-              <item name="commands" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
@@ -321,9 +250,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.12846482" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.12846482" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -335,7 +263,7 @@
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Terminal" order="9" visible="true" weight="0.329718" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="9" visible="true" weight="0.329718" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.50053304" side_tool="true" weight="0.329718" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -354,7 +282,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/main.go</url>
-          <line>262</line>
+          <line>309</line>
           <properties />
           <option name="timeStamp" value="25" />
         </line-breakpoint>
@@ -732,31 +660,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/instagram/commands/commands.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="16" lean-forward="true" selection-start-column="16" selection-end-column="16" />
-          <folding>
-            <element signature="e#18#93#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/client/web/default_suspender.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="68">
           <caret line="4" selection-start-line="4" selection-end-line="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/rules.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="636">
-          <caret line="86" column="4" lean-forward="true" selection-start-line="86" selection-start-column="6" selection-end-line="92" selection-end-column="7" />
-          <folding>
-            <element signature="e#15#85#0" expanded="true" />
-            <element signature="n#!!block;n#GetName#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -781,10 +688,45 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="1" column="7" lean-forward="true" selection-start-line="1" selection-start-column="7" selection-end-line="1" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client/web/comment_cursor.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="21" column="1" selection-start-line="21" selection-start-column="1" selection-end-line="21" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/instagram/commands/commands.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="16" lean-forward="true" selection-start-column="16" selection-end-column="16" />
+          <folding>
+            <element signature="e#18#93#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/rules.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="56" column="52" selection-start-line="56" selection-start-column="52" selection-end-line="56" selection-end-column="52" />
+          <folding>
+            <element signature="e#15#85#0" expanded="true" />
+            <element signature="n#!!block;n#GetName#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/main.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="49">
-          <caret line="243" column="13" selection-start-line="243" selection-start-column="13" selection-end-line="243" selection-end-column="13" />
+        <state relative-caret-position="366">
+          <caret line="202" column="44" selection-start-line="202" selection-start-column="44" selection-end-line="202" selection-end-column="44" />
           <folding>
             <element signature="e#14#352#0" expanded="true" />
             <element signature="e#365#408#0" />
@@ -798,20 +740,6 @@
             <element signature="e#6952#7490#0" />
             <element signature="e#7534#8119#0" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/client/web/comment_cursor.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="21" column="1" selection-start-line="21" selection-start-column="1" selection-end-line="21" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="1" column="1" selection-start-line="1" selection-start-column="1" selection-end-line="1" selection-end-column="1" />
         </state>
       </provider>
     </entry>
