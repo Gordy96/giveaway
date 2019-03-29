@@ -19,7 +19,7 @@ import (
 )
 
 func NewWebClient(generator utils.IUserAgentGenerator, proxy string) *Client {
-	client := &Client{uag: generator}
+	cl := &Client{uag: generator}
 	jar, _ := cookiejar.New(nil)
 	proxyURL, err := url.Parse(proxy)
 	if err != nil {
@@ -27,17 +27,17 @@ func NewWebClient(generator utils.IUserAgentGenerator, proxy string) *Client {
 	}
 	httpClient := &http.Client{Jar: jar, Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 
-	client.http = httpClient
-	return client
+	cl.http = httpClient
+	return cl
 }
 
 type Client struct {
-	http 		*http.Client
-	sig 		string
-	appId 		string
+	http        *http.Client
+	sig         string
+	appId       string
 	rolloutHash string
-	acc			*account.Account
-	uag 		utils.IUserAgentGenerator
+	acc         *account.Account
+	uag         utils.IUserAgentGenerator
 }
 
 func (c *Client) getHttpClient() *http.Client {
@@ -76,7 +76,7 @@ func (c *Client) makeRequest(method, url string, body io.Reader) (*http.Request,
 	return req, nil
 }
 
-func (c *Client) Init() (error) {
+func (c *Client) Init() error {
 	req, err := c.makeRequest("GET", "https://www.instagram.com", nil)
 	if err != nil {
 		return err
@@ -90,19 +90,19 @@ func (c *Client) Init() (error) {
 		return err
 	}
 
-	sigStr := respString[strings.Index(respString, "rhx_gis\":\"") + 10:]
+	sigStr := respString[strings.Index(respString, "rhx_gis\":\"")+10:]
 	sigStr = sigStr[:strings.Index(sigStr, "\"")]
 
 	c.sig = sigStr
 
-	roll := respString[strings.Index(respString, "rollout_hash\":\"") + 15:]
+	roll := respString[strings.Index(respString, "rollout_hash\":\"")+15:]
 	roll = roll[:strings.Index(roll, "\"")]
 
 	c.rolloutHash = roll
 
 	consumerCommonsHashPositionStart := strings.Index(respString, "ConsumerCommons.js/") + 19
 	respString = respString[consumerCommonsHashPositionStart:]
-	consumerCommonsHashPositionEnd := strings.Index(respString,"\"")
+	consumerCommonsHashPositionEnd := strings.Index(respString, "\"")
 	consumerCommonsHref := "/static/bundles/metro/ConsumerCommons.js/" + respString[:consumerCommonsHashPositionEnd]
 
 	nUrl, _ := req.URL.Parse(consumerCommonsHref)
@@ -120,7 +120,7 @@ func (c *Client) Init() (error) {
 	if err != nil {
 		return nil
 	}
-	respString = respString[strings.Index(respString, "instagramWebFBAppId='") + 21:]
+	respString = respString[strings.Index(respString, "instagramWebFBAppId='")+21:]
 	appId := respString[:strings.Index(respString, "'")]
 	c.appId = appId
 
@@ -151,9 +151,9 @@ func (c *Client) Login() (bool, error) {
 	}
 	c.prepare(req)
 	req.Header.Del("X-Instagram-GIS")
-	req.Header.Set("Referer","https://www.instagram.com/accounts/login/")
-	req.Header.Set("Origin" ,"https://www.instagram.com")
-	req.Header.Set("Content-Type" ,"application/x-www-form-urlencoded")
+	req.Header.Set("Referer", "https://www.instagram.com/accounts/login/")
+	req.Header.Set("Origin", "https://www.instagram.com")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Instagram-AJAX", c.rolloutHash)
 
 	csrf := c.findCSRF(uri)
@@ -206,6 +206,6 @@ func (c *Client) SetAccount(acc *account.Account) {
 	c.acc = acc
 }
 
-func (c *Client) GetAccount() *account.Account{
+func (c *Client) GetAccount() *account.Account {
 	return c.acc
 }

@@ -1,19 +1,6 @@
 package client
 
-import (
-	"giveaway/instagram/account"
-)
-
-type WorksWithAccount interface {
-	GetAccount() *account.Account
-	SetAccount(*account.Account)
-}
-
-type AuthenticatesAccount interface {
-	WorksWithAccount
-	Login() (bool, error)
-}
-
+import "giveaway/data"
 
 type SuspendsThread interface {
 	Sleep()
@@ -23,10 +10,10 @@ type AcceptsThreadSuspender interface {
 	SetSuspender(SuspendsThread)
 }
 
-type IRule interface {
-	Validate(interface{}) (bool, error)
+type HasDateAttribute interface {
+	GetCreationDate() int64
 }
 
-type HasDateAttribute interface {
-	GetCreationDate() int32
+type HasOwner interface {
+	GetOwner() *data.Owner
 }

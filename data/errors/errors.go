@@ -1,7 +1,6 @@
 package errors
 
 type HttpForbidden struct {
-
 }
 
 func (e HttpForbidden) Error() string {
@@ -9,7 +8,6 @@ func (e HttpForbidden) Error() string {
 }
 
 type HttpTooManyRequests struct {
-
 }
 
 func (e HttpTooManyRequests) Error() string {
@@ -17,7 +15,6 @@ func (e HttpTooManyRequests) Error() string {
 }
 
 type ShouldStopIterationError struct {
-
 }
 
 func (e ShouldStopIterationError) Error() string {
@@ -25,7 +22,6 @@ func (e ShouldStopIterationError) Error() string {
 }
 
 type UnknownRuleError struct {
-
 }
 
 func (e UnknownRuleError) Error() string {
@@ -33,10 +29,15 @@ func (e UnknownRuleError) Error() string {
 }
 
 type LoginRequired struct {
-
 }
 
 func (e LoginRequired) Error() string {
 	return "login required"
 }
 
+type ValidationCriticalFailure struct {
+}
+
+func (e ValidationCriticalFailure) Error() string {
+	return "critical error while processing"
+}

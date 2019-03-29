@@ -1,15 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"giveaway/client"
-	"giveaway/client/api"
+	"giveaway/client/validation"
+	"giveaway/client/validation/rules"
 	"giveaway/client/web"
 	"giveaway/data"
 	"giveaway/data/errors"
-	"giveaway/instagram/account"
+	"giveaway/instagram/solver"
 	"giveaway/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -82,16 +84,22 @@ func GetLogger() *utils.Logger {
 	return logger
 }
 
-func filterWinner(ret *RandomEntryTask, rules []client.IRule) (int, interface{}) {
+func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interface{}) {
 	max := ret.LengthNoDuplicates()
 	i := 0
 	for {
 		winnerId := ret.GetRandomIndexNoDuplicates()
 		temp := ret.Get(winnerId).Value
+		shouldChoose := true
 		for _, rule := range rules {
-			if shouldChoose, _ := rule.Validate(temp); shouldChoose {
-				return winnerId, ret.Get(winnerId).Value
+			ruleResult, _ := rule.Validate(temp)
+			if !ruleResult {
+				shouldChoose = false
+				break
 			}
+		}
+		if shouldChoose {
+			return winnerId, ret.Get(winnerId).Value
 		}
 		i++
 		if i >= max {
@@ -100,7 +108,7 @@ func filterWinner(ret *RandomEntryTask, rules []client.IRule) (int, interface{})
 	}
 }
 
-func filterWinnerHashTag(ret *RandomEntryTask, rules []client.IRule) *data.TagMedia {
+func filterWinnerHashTag(ret *RandomEntryTask, rules []validation.IRule) *data.TagMedia {
 	_, t := filterWinner(ret, rules)
 	if t != nil {
 		return t.(*data.TagMedia)
@@ -108,7 +116,7 @@ func filterWinnerHashTag(ret *RandomEntryTask, rules []client.IRule) *data.TagMe
 	return nil
 }
 
-func filterWinnerComment(ret *RandomEntryTask, rules []client.IRule) (int, *data.Comment) {
+func filterWinnerComment(ret *RandomEntryTask, rules []validation.IRule) (int, *data.Comment) {
 	i, t := filterWinner(ret, rules)
 	if t != nil {
 		return i, t.(*data.Comment)
@@ -116,7 +124,7 @@ func filterWinnerComment(ret *RandomEntryTask, rules []client.IRule) (int, *data
 	return -1, nil
 }
 
-func execPosts(task *data.HashTagTask, db *mongo.Database, rules utils.RuleCollection) {
+func execPosts(task *data.HashTagTask, db *mongo.Database, rules validation.RuleCollection) {
 	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
@@ -132,6 +140,9 @@ func execPosts(task *data.HashTagTask, db *mongo.Database, rules utils.RuleColle
 			switch /*e := */ err.(type) {
 			case errors.ShouldStopIterationError:
 				return false
+			}
+			if !shouldAdd {
+				break
 			}
 		}
 		if shouldAdd {
@@ -157,7 +168,7 @@ func execPosts(task *data.HashTagTask, db *mongo.Database, rules utils.RuleColle
 	}
 }
 
-func execComments(task *data.CommentsTask, db *mongo.Database, rules utils.RuleCollection) {
+func execComments(task *data.CommentsTask, db *mongo.Database, rules validation.RuleCollection) {
 	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
@@ -172,6 +183,9 @@ func execComments(task *data.CommentsTask, db *mongo.Database, rules utils.RuleC
 			switch /*e := */ err.(type) {
 			case errors.ShouldStopIterationError:
 				return false
+			}
+			if !shouldAdd {
+				break
 			}
 		}
 		if shouldAdd {
@@ -213,7 +227,7 @@ func execComments(task *data.CommentsTask, db *mongo.Database, rules utils.RuleC
 }
 
 type HasRulesJsonRequest struct {
-	Rules utils.RuleCollection `json:"rules"`
+	Rules validation.RuleCollection `json:"rules"`
 }
 
 type CommentTaskJsonRequest struct {
@@ -297,17 +311,37 @@ func main() {
 	//client.SetAccount(acc)
 	//client.Init()
 	//client.Login()
-	acc := account.NewAccount("johndoe8365", "123qwerty")
-	acc.DeviceId = "android-3815aa3061e066c6"
-	acc.AdId = "ebb78380-02c4-4111-abf3-76a1960daf30"
-	acc.GUID = "3809a356-7663-48ab-9454-3f5c97928253"
-	acc.PhoneId = "01fe7828-9bad-467f-878d-57322c1d6337"
-	client := api.NewApiClient("http://localhost:8888")
-	client.SetAccount(acc)
+	//acc := account.NewAccount("johndoe8365", "123qwerty")
+	//acc.DeviceId = "android-3815aa3061e066c6"
+	//acc.AdId = "ebb78380-02c4-4111-abf3-76a1960daf30"
+	//acc.GUID = "3809a356-7663-48ab-9454-3f5c97928253"
+	//acc.PhoneId = "01fe7828-9bad-467f-878d-57322c1d6337"
+	solv := solver.GetInstance()
+	solv.Run()
+	//repo := repository.GetRepositoryInstance()
+
+	rule := rules.FollowingRule{"FollowingRule", "25025320"}
+	post := data.TagMedia{}
+	post.Owner = data.Owner{"4119227113", "ozcan198865"}
+	r, err := rule.Validate(&post)
+	fmt.Printf("%v, %v", r, err)
+	buf := bufio.NewReader(os.Stdin)
+	buf.ReadBytes('\n')
+
+	//for i := 0; i < 10; i++ {
+	//	ac := account.NewAccount(utils.RandStringBytes(16),utils.RandStringBytes(16))
+	//	ac.Id = strconv.Itoa(1000000 + rand.Intn(8999999))
+	//	repo.Save(ac)
+	//}
+	//
+	//return
+
+	//client := api.NewApiClient("http://localhost:8888")
+	//client.SetAccount(acc)
 	//client.QeSync()
 	//client.LauncherSync()
 	//client.Login()
-	client.IsFollower(data.Owner{"3532042922", ""}, "25025320")
+	//client.IsFollower(data.Owner{"3532042922", ""}, "25025320")
 
 	return
 

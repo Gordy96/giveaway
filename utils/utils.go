@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"time"
 )
@@ -12,7 +13,6 @@ type IUserAgentGenerator interface {
 }
 
 type UserAgentGenerator struct {
-
 }
 
 func (u *UserAgentGenerator) Get() string {
@@ -20,8 +20,8 @@ func (u *UserAgentGenerator) Get() string {
 }
 
 type Logger struct {
-	ch 		chan string
-	dst 	io.WriteCloser
+	ch  chan string
+	dst io.WriteCloser
 }
 
 func (l *Logger) Log(s string) {
@@ -35,7 +35,7 @@ func (l *Logger) Close() {
 
 func (l *Logger) loop() {
 	for {
-		s, ok := <- l.ch
+		s, ok := <-l.ch
 		if !ok {
 			return
 		}
@@ -51,4 +51,14 @@ func NewFileLogger() *Logger {
 	l := &Logger{make(chan string), file}
 	go l.loop()
 	return l
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_."
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }

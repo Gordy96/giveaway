@@ -25,10 +25,10 @@ import (
 )
 
 type Client struct {
-	http 		*http.Client
-	acc			*account.Account
-	uag			utils.IUserAgentGenerator
-	loggedIn	bool
+	http     *http.Client
+	acc      *account.Account
+	uag      utils.IUserAgentGenerator
+	loggedIn bool
 }
 
 func (c *Client) Sign(body []byte) string {
@@ -88,7 +88,7 @@ func (c *Client) procResp(resp *http.Response) (map[string]interface{}, error) {
 		return temp, err
 	}
 
-	c.acc.Cookies[resp.Request.URL.String()] = resp.Cookies()
+	c.acc.SetCookies(resp.Request.URL, resp.Cookies())
 
 	if resp.StatusCode != 200 {
 		err = fmt.Errorf("%d, %s", resp.StatusCode, resp.Status)
@@ -124,8 +124,8 @@ func (c *Client) GetUserInfo(id string) (*data.Owner, error) {
 	return nil, err
 }
 
-func (c *Client) IsFollower(o data.Owner, id string) (bool, error) {
-	uri := fmt.Sprintf("%s/api/v1/friendships/%s/followers", instagram.AppHost, id)
+func (c *Client) IsFollower(o *data.Owner, id string) (bool, error) {
+	uri := fmt.Sprintf("%s/api/v1/friendships/%s/followers/", instagram.AppHost, id)
 	req := c.newRequest(
 		"GET",
 		uri,
@@ -138,13 +138,13 @@ func (c *Client) IsFollower(o data.Owner, id string) (bool, error) {
 			return false, err
 		}
 		o.Username = so.Username
-	} else {
+	} else if o.Username == "" {
 		return false, fmt.Errorf("owner object malformed")
 	}
 
 	query := req.URL.Query()
 	query.Add("query", o.Username)
-	query.Add("tank_token", uuid.New().String())
+	query.Add("rank_token", uuid.New().String())
 	req.URL.RawQuery = query.Encode()
 
 	resp, err := c.http.Do(req)
@@ -174,7 +174,7 @@ func (c *Client) IsFollower(o data.Owner, id string) (bool, error) {
 
 func (c *Client) QeSync() error {
 	jsonBody := map[string]interface{}{
-		"experiments":	instagram.Constants[instagram.Version].Experiments,
+		"experiments": instagram.Constants[instagram.Version].Experiments,
 	}
 	if !c.loggedIn {
 		jsonBody["id"] = c.acc.GUID
@@ -203,7 +203,7 @@ func (c *Client) QeSync() error {
 
 func (c *Client) LauncherSync() error {
 	jsonBody := map[string]interface{}{
-		"configs":	instagram.Constants[instagram.Version].Configs,
+		"configs": instagram.Constants[instagram.Version].Configs,
 	}
 	if !c.loggedIn {
 		jsonBody["id"] = c.acc.GUID
@@ -237,17 +237,27 @@ func (c *Client) LauncherSync() error {
 	return err
 }
 
+func (c *Client) setCookieJar(jar http.CookieJar) {
+	c.http.Jar = jar
+}
+
 func (c *Client) Login() (bool, error) {
+	c.acc.ResetCookies()
+	c.setCookieJar(c.acc.MakeCookieJar())
+
+	c.QeSync()
+	c.LauncherSync()
+
 	jsonBody := map[string]interface{}{
-		"country_codes": "[{\"country_code\":\"1\",\"source\":[\"me_profile\"]},{\"country_code\":\"1\",\"source\":[\"default\"]}]",
-		"phone_id": c.acc.PhoneId,
-		"username": c.acc.Username,
-		"adid": c.acc.AdId,
-		"guid": c.acc.GUID,
-		"device_id": c.acc.DeviceId,
-		"google_tokens": "",
-		"password": c.acc.Password,
-		"login_attempt_count": "3",
+		"country_codes":       "[{\"country_code\":\"1\",\"source\":[\"me_profile\"]},{\"country_code\":\"1\",\"source\":[\"default\"]}]",
+		"phone_id":            c.acc.PhoneId,
+		"username":            c.acc.Username,
+		"adid":                c.acc.AdId,
+		"guid":                c.acc.GUID,
+		"device_id":           c.acc.DeviceId,
+		"google_tokens":       "",
+		"password":            c.acc.Password,
+		"login_attempt_count": "1",
 	}
 
 	uri, _ := url.Parse(instagram.AppHost + "/api/v1/accounts/login/")
@@ -282,31 +292,44 @@ func (c *Client) Login() (bool, error) {
 	return false, err
 }
 
-func NewApiClient(proxy string) *Client {
-	client := &Client{}
-	client.uag = AppUserAgentGenerator{}
-	jar, _ := cookiejar.New(nil)
+func makeProxy(proxy string) *http.Transport {
 	proxyURL, err := url.Parse(proxy)
 	if err != nil {
 		log.Println(err)
 	}
-	httpClient := &http.Client{Jar: jar, Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 
-	client.http = httpClient
-	return client
+	return &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+}
+
+func NewApiClient() *Client {
+	cl := &Client{}
+	cl.uag = AppUserAgentGenerator{}
+	jar, _ := cookiejar.New(nil)
+
+	httpClient := &http.Client{Jar: jar}
+
+	cl.http = httpClient
+	return cl
+}
+
+func NewProxiedApiClient(proxy string) *Client {
+	cl := NewApiClient()
+	cl.http.Transport = makeProxy(proxy)
+	return cl
 }
 
 func NewApiClientWithAccount(acc *account.Account) *Client {
-	client := NewApiClient(acc.Proxy)
-	client.SetAccount(acc)
-	return client
+	cl := NewProxiedApiClient(acc.Proxy)
+	cl.SetAccount(acc)
+	return cl
 }
 
 func (c *Client) SetAccount(acc *account.Account) {
 	c.acc = acc
-	c.http.Jar = c.acc.MakeCookieJar()
+	c.http.Transport = makeProxy(acc.Proxy)
+	c.setCookieJar(c.acc.MakeCookieJar())
 }
 
-func (c *Client) GetAccount() *account.Account{
+func (c *Client) GetAccount() *account.Account {
 	return c.acc
 }

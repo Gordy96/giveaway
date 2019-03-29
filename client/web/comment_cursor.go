@@ -12,13 +12,13 @@ import (
 )
 
 type CommentCursor struct {
-	hashes 			[2]string
-	step 			int
-	cursor 			string
-	hasNext 		bool
-	code 			string
-	client 			*Client
-	suspender		client.SuspendsThread
+	hashes    [2]string
+	step      int
+	cursor    string
+	hasNext   bool
+	code      string
+	client    *Client
+	suspender client.SuspendsThread
 }
 
 func (c *CommentCursor) Next() <-chan data.Comment {
@@ -26,7 +26,7 @@ func (c *CommentCursor) Next() <-chan data.Comment {
 	errChan := make(chan error)
 	go func() {
 		for {
-			e, ok := <- errChan
+			e, ok := <-errChan
 			if !ok {
 				return
 			}
@@ -52,12 +52,12 @@ func (c *CommentCursor) run(errChan chan error, resChan chan data.Comment) {
 	for {
 		hash = c.hashes[c.step]
 
-		if c.step == 0{
+		if c.step == 0 {
 			query, err = json.Marshal(map[string]interface{}{
-				"shortcode": c.code,
-				"child_comment_count": 0,
-				"fetch_comment_count": 50,
-				"parent_comment_count": 0,
+				"shortcode":             c.code,
+				"child_comment_count":   0,
+				"fetch_comment_count":   50,
+				"parent_comment_count":  0,
 				"has_threaded_comments": false,
 			})
 			if err != nil {
@@ -73,8 +73,8 @@ func (c *CommentCursor) run(errChan chan error, resChan chan data.Comment) {
 			}
 			query, err = json.Marshal(map[string]interface{}{
 				"shortcode": c.code,
-				"first": 50,
-				"after": c.cursor,
+				"first":     50,
+				"after":     c.cursor,
 			})
 			if err != nil {
 				errChan <- err
@@ -128,11 +128,11 @@ func (c *CommentCursor) run(errChan chan error, resChan chan data.Comment) {
 			temp := node.(map[string]interface{})["node"].(map[string]interface{})
 			if owner, p := temp["owner"].(map[string]interface{}); p {
 				resChan <- data.Comment{
-					Id: temp["id"].(string),
-					Text: temp["text"].(string),
-					CreatedAt: int32(temp["created_at"].(float64)),
+					Id:        temp["id"].(string),
+					Text:      temp["text"].(string),
+					CreatedAt: int64(temp["created_at"].(float64)),
 					Owner: data.Owner{
-						Id: owner["id"].(string),
+						Id:       owner["id"].(string),
 						Username: owner["username"].(string),
 					},
 				}
@@ -159,7 +159,6 @@ func NewCommentCursor(c *Client, code string) *CommentCursor {
 	}
 
 	cursor.suspender = &defaultSuspender{}
-
 
 	return cursor
 }
