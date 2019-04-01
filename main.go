@@ -1,24 +1,17 @@
 package main
 
 import (
-	"bufio"
-	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"giveaway/client/validation"
-	"giveaway/client/validation/rules"
 	"giveaway/client/web"
 	"giveaway/data"
 	"giveaway/data/errors"
 	"giveaway/instagram/solver"
 	"giveaway/utils"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"math/rand"
-	"os"
 	"time"
 )
 
@@ -84,7 +77,7 @@ func GetLogger() *utils.Logger {
 	return logger
 }
 
-func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interface{}) {
+func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interface{}, error) {
 	max := ret.LengthNoDuplicates()
 	i := 0
 	for {
@@ -92,39 +85,42 @@ func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interfac
 		temp := ret.Get(winnerId).Value
 		shouldChoose := true
 		for _, rule := range rules {
-			ruleResult, _ := rule.Validate(temp)
+			ruleResult, err := rule.Validate(temp)
 			if !ruleResult {
 				shouldChoose = false
 				break
 			}
+			if err != nil {
+				return -1, nil, err
+			}
 		}
 		if shouldChoose {
-			return winnerId, ret.Get(winnerId).Value
+			return winnerId, ret.Get(winnerId).Value, nil
 		}
 		i++
 		if i >= max {
-			return -1, nil
+			return -1, nil, nil
 		}
 	}
 }
 
-func filterWinnerHashTag(ret *RandomEntryTask, rules []validation.IRule) *data.TagMedia {
-	_, t := filterWinner(ret, rules)
+func filterWinnerHashTag(ret *RandomEntryTask, rules []validation.IRule) (*data.TagMedia, error) {
+	_, t, e := filterWinner(ret, rules)
 	if t != nil {
-		return t.(*data.TagMedia)
+		return t.(*data.TagMedia), nil
 	}
-	return nil
+	return nil, e
 }
 
-func filterWinnerComment(ret *RandomEntryTask, rules []validation.IRule) (int, *data.Comment) {
-	i, t := filterWinner(ret, rules)
+func filterWinnerComment(ret *RandomEntryTask, rules []validation.IRule) (int, *data.Comment, error) {
+	i, t, e := filterWinner(ret, rules)
 	if t != nil {
-		return i, t.(*data.Comment)
+		return i, t.(*data.Comment), e
 	}
-	return -1, nil
+	return -1, nil, e
 }
 
-func execPosts(task *data.HashTagTask, db *mongo.Database, rules validation.RuleCollection) {
+func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
@@ -132,9 +128,9 @@ func execPosts(task *data.HashTagTask, db *mongo.Database, rules validation.Rule
 		return e.(*data.TagMedia).Owner.Id
 	}}
 
+	var err error = nil
 	cl.QueryTag(task.HashTag, func(media data.TagMedia) bool {
 		var shouldAdd = true
-		var err error = nil
 		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&media)
 			switch /*e := */ err.(type) {
@@ -151,33 +147,29 @@ func execPosts(task *data.HashTagTask, db *mongo.Database, rules validation.Rule
 		return true
 	})
 
-	winner := filterWinnerHashTag(&ret, rules.SelectRules())
+	winner, err := filterWinnerHashTag(&ret, rules.SelectRules())
 	if winner != nil {
 		task.Post = winner
 		task.Status = "complete"
 	} else {
 		task.Status = "cannot_decide_winner"
 	}
-
-	res, err := db.Collection("HashTagTasks").UpdateOne(nil, bson.M{"_id": bsonx.ObjectID(task.Id)}, bson.M{"$set": task})
-	if res.ModifiedCount == 0 {
-		panic(fmt.Errorf("not found"))
-	}
+	err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(task)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func execComments(task *data.CommentsTask, db *mongo.Database, rules validation.RuleCollection) {
+func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
 	ret := RandomEntryTask{make([]Entry, 0), make(map[string][]int, 0), func(e interface{}) string {
 		return e.(*data.Comment).Owner.Id
 	}}
+	var err error = nil
 	cl.QueryComments(task.ShortCode, func(comment data.Comment) bool {
 		var shouldAdd = true
-		var err error = nil
 		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&comment)
 			switch /*e := */ err.(type) {
@@ -194,7 +186,7 @@ func execComments(task *data.CommentsTask, db *mongo.Database, rules validation.
 		return true
 	})
 
-	winnerId, winner := filterWinnerComment(&ret, rules.SelectRules())
+	winnerId, winner, err := filterWinnerComment(&ret, rules.SelectRules())
 
 	if winner != nil {
 		above := make([]*data.Comment, 0)
@@ -217,10 +209,7 @@ func execComments(task *data.CommentsTask, db *mongo.Database, rules validation.
 		task.Status = "cannot_decide_winner"
 	}
 
-	res, err := db.Collection("CommentTasks").UpdateOne(nil, bson.M{"_id": bsonx.ObjectID(task.Id)}, bson.M{"$set": task})
-	if res.ModifiedCount == 0 {
-		panic(fmt.Errorf("not found"))
-	}
+	err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(task)
 	if err != nil {
 		panic(err)
 	}
@@ -275,7 +264,7 @@ type SuccessfulCommentsTaskJsonResponse struct {
 
 func NewSuccessfulCommentsTaskJsonResponse(task data.CommentsTask) SuccessfulCommentsTaskJsonResponse {
 	r := SuccessfulCommentsTaskJsonResponse{}
-	r.Status = false
+	r.Status = true
 	r.Result = task
 	return r
 }
@@ -287,71 +276,33 @@ type SuccessfulHashTagTaskJsonResponse struct {
 
 func NewSuccessfulHashTagTaskJsonResponse(task data.HashTagTask) SuccessfulHashTagTaskJsonResponse {
 	r := SuccessfulHashTagTaskJsonResponse{}
-	r.Status = false
+	r.Status = true
 	r.Result = task
 	return r
 }
 
-func SafeSend(ch chan int, value int) (closed bool) {
-	defer func() {
-		if recover() != nil {
-			closed = false
-		}
-	}()
-	ch <- value // panic if ch is closed
-	return true // <=> closed = false; return
-}
-
 func main() {
-	//GetLogger()
-	//client := web.NewWebClient(&utils.UserAgentGenerator{},"http://localhost:8888")
-	//exec("BvZUiaKps7N", client, task)
-	//acc := account.NewAccount("sasai@protonmail.com", "1Qqwerty")
-	//client := web.NewWebClient(&utils.UserAgentGenerator{}, GetLogger())
-	//client.SetAccount(acc)
-	//client.Init()
-	//client.Login()
-	//acc := account.NewAccount("johndoe8365", "123qwerty")
-	//acc.DeviceId = "android-3815aa3061e066c6"
-	//acc.AdId = "ebb78380-02c4-4111-abf3-76a1960daf30"
-	//acc.GUID = "3809a356-7663-48ab-9454-3f5c97928253"
-	//acc.PhoneId = "01fe7828-9bad-467f-878d-57322c1d6337"
 	solv := solver.GetInstance()
 	solv.Run()
 	//repo := repository.GetRepositoryInstance()
-
-	rule := rules.FollowingRule{"FollowingRule", "25025320"}
-	post := data.TagMedia{}
-	post.Owner = data.Owner{"4119227113", "ozcan198865"}
-	r, err := rule.Validate(&post)
-	fmt.Printf("%v, %v", r, err)
-	buf := bufio.NewReader(os.Stdin)
-	buf.ReadBytes('\n')
-
-	//for i := 0; i < 10; i++ {
-	//	ac := account.NewAccount(utils.RandStringBytes(16),utils.RandStringBytes(16))
-	//	ac.Id = strconv.Itoa(1000000 + rand.Intn(8999999))
-	//	repo.Save(ac)
+	//for {
+	//	ac := repo.GetOldestUsedRetries(5, 2 * time.Second)
+	//	cl := api.NewApiClientWithAccount(ac)
+	//	o := data.Owner{"4119227113", "ozcan198865"}
+	//	id := "25025320"
+	//	i, err := cl.IsFollower(&o, id)
+	//	switch err.(type) {
+	//	case errors.LoginRequired:
+	//		solver.GetRunningInstance().Enqueue(commands.MakeNewReLoginCommand(ac))
+	//	}
+	//	if i {
+	//		fmt.Printf("%s do follows %s", o.Username, id)
+	//	} else {
+	//		fmt.Printf("%s do not follows %s", o.Username, id)
+	//	}
 	//}
 	//
 	//return
-
-	//client := api.NewApiClient("http://localhost:8888")
-	//client.SetAccount(acc)
-	//client.QeSync()
-	//client.LauncherSync()
-	//client.Login()
-	//client.IsFollower(data.Owner{"3532042922", ""}, "25025320")
-
-	return
-
-	conn, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	conn.Connect(ctx)
-	db := conn.Database("giveaway")
-	if err != nil {
-		panic(err)
-	}
 	app := gin.Default()
 	api := app.Group("/api")
 	{
@@ -362,23 +313,20 @@ func main() {
 				comments := tasks.Group("/comments")
 				{
 					comments.GET("/:id", func(c *gin.Context) {
-						task := data.CommentsTask{}
 						id, err := primitive.ObjectIDFromHex(c.Param("id"))
 
 						if err != nil {
 							c.JSON(404, NewNotFoundJsonResponse())
 							return
 						}
-
-						res := db.Collection("CommentTasks").FindOne(nil, bson.M{"_id": bsonx.ObjectID(id)})
-						err = res.Decode(&task)
+						res, err := utils.GetNamedTasksRepositoryInstance("CommentTasks").FindCommentsTaskById(bsonx.ObjectID(id))
 
 						if err != nil {
 							c.JSON(404, NewNotFoundJsonResponse())
 							return
 						}
 
-						c.JSON(200, NewSuccessfulCommentsTaskJsonResponse(task))
+						c.JSON(200, NewSuccessfulCommentsTaskJsonResponse(*res))
 					})
 					comments.POST("/", func(c *gin.Context) {
 
@@ -393,20 +341,19 @@ func main() {
 						task.ShortCode = req.ShortCode
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						_, err = db.Collection("CommentTasks").InsertOne(nil, task)
+						err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(&task)
 
 						if err != nil {
 							panic(err)
 						}
 
-						go execComments(&task, db, req.Rules)
+						go execComments(&task, req.Rules)
 						c.JSON(200, NewSuccessfulCommentsTaskJsonResponse(task))
 					})
 				}
 				posts := tasks.Group("/posts")
 				{
 					posts.GET("/:id", func(c *gin.Context) {
-						task := data.HashTagTask{}
 						id, err := primitive.ObjectIDFromHex(c.Param("id"))
 
 						if err != nil {
@@ -414,15 +361,14 @@ func main() {
 							return
 						}
 
-						res := db.Collection("HashTagTasks").FindOne(nil, bson.M{"_id": bsonx.ObjectID(id)})
-						err = res.Decode(&task)
+						res, err := utils.GetNamedTasksRepositoryInstance("HashTagTasks").FindHashTagTaskById(bsonx.ObjectID(id))
 
 						if err != nil {
 							c.JSON(404, NewNotFoundJsonResponse())
 							return
 						}
 
-						c.JSON(200, NewSuccessfulHashTagTaskJsonResponse(task))
+						c.JSON(200, NewSuccessfulHashTagTaskJsonResponse(*res))
 					})
 					posts.POST("/", func(c *gin.Context) {
 
@@ -437,13 +383,12 @@ func main() {
 						task.HashTag = req.HashTag
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						_, err = db.Collection("HashTagTasks").InsertOne(nil, task)
-
+						err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(&task)
 						if err != nil {
 							panic(err)
 						}
 
-						go execPosts(&task, db, req.Rules)
+						go execPosts(&task, req.Rules)
 						c.JSON(200, NewSuccessfulHashTagTaskJsonResponse(task))
 					})
 				}

@@ -8,36 +8,26 @@ import (
 	"giveaway/data"
 	httpErrors "giveaway/data/errors"
 	"io/ioutil"
-	"time"
 )
 
 type TagMediaCursor struct {
-	cursor 		string
-	hasNext 	bool
-	tag 		string
-	client 		*Client
-	suspender	client.SuspendsThread
+	cursor    string
+	hasNext   bool
+	tag       string
+	client    *Client
+	suspender client.SuspendsThread
 }
 
-func (c *TagMediaCursor) Next() <-chan data.TagMedia {
+func (c *TagMediaCursor) Next() (<-chan data.TagMedia, <-chan error) {
 	resChan := make(chan data.TagMedia)
 	errChan := make(chan error)
-	go func() {
-		for {
-			e, ok := <- errChan
-			if !ok {
-				return
-			}
-			fmt.Printf("[%s]: %s", time.Now().String(), e.Error())
-		}
-	}()
 
 	go c.run(errChan, resChan)
 
-	return resChan
+	return resChan, errChan
 }
 
-func (c *TagMediaCursor) run(errChan chan error, resChan chan data.TagMedia){
+func (c *TagMediaCursor) run(errChan chan error, resChan chan data.TagMedia) {
 	var query []byte
 	var err error
 
@@ -54,10 +44,10 @@ func (c *TagMediaCursor) run(errChan chan error, resChan chan data.TagMedia){
 			return
 		}
 
-		variables := map[string]interface{} {
-			"tag_name": c.tag,
-			"show_ranked":false,
-			"first": 50,
+		variables := map[string]interface{}{
+			"tag_name":    c.tag,
+			"show_ranked": false,
+			"first":       50,
 		}
 
 		if c.cursor != "" {
@@ -123,14 +113,14 @@ func (c *TagMediaCursor) run(errChan chan error, resChan chan data.TagMedia){
 				commented, _ := temp["edge_media_to_comment"].(map[string]interface{})["count"].(float64)
 				timestamp, _ := temp["taken_at_timestamp"].(float64)
 				resChan <- data.TagMedia{
-					Id: temp["id"].(string),
-					Type: temp["__typename"].(string),
-					ShortCode: temp["shortcode"].(string),
-					LikeCount: int32(liked),
+					Id:           temp["id"].(string),
+					Type:         temp["__typename"].(string),
+					ShortCode:    temp["shortcode"].(string),
+					LikeCount:    int32(liked),
 					CommentCount: int32(commented),
-					TakenAt: int32(timestamp),
+					TakenAt:      int32(timestamp),
 					Owner: data.Owner{
-						Id: owner["id"].(string),
+						Id:       owner["id"].(string),
 						Username: "",
 					},
 				}

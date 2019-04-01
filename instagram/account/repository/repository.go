@@ -44,14 +44,49 @@ func (r *Repository) GetRandom() *account.Account {
 	return ac
 }
 
-func (r *Repository) GetOldestUsed() *account.Account {
-	ac := &account.Account{}
+func (r *Repository) GetOldestUsedRetries(retries int, timeout time.Duration) *account.Account {
+	var ac *account.Account = nil
 	mux := sync.Mutex{}
 	mux.Lock()
 	defer mux.Unlock()
 	filter := bson.M{
 		"status": bson.M{
 			"$nin": []account.AccountStatus{
+				account.CheckPoint,
+				account.Error,
+			},
+		},
+	}
+	for ; retries > 0; retries-- {
+		cur, err := r.col.Aggregate(nil, []bson.M{
+			{"$match": filter},
+			{"$count": "count"},
+		})
+		resStruct := struct {
+			Count int32 `json:"count"`
+		}{}
+		cur.Next(nil)
+		err = cur.Decode(&resStruct)
+		if err != nil {
+			panic(err)
+		}
+		if resStruct.Count > 0 {
+			ac = r.getOldest()
+			if ac != nil {
+				return ac
+			}
+		}
+		time.Sleep(timeout)
+	}
+	return nil
+}
+
+func (r *Repository) getOldest() *account.Account {
+	ac := &account.Account{}
+	filter := bson.M{
+		"status": bson.M{
+			"$nin": []account.AccountStatus{
+				account.Busy,
 				account.Maintenance,
 				account.CheckPoint,
 				account.Error,
@@ -68,8 +103,20 @@ func (r *Repository) GetOldestUsed() *account.Account {
 		return nil
 	}
 	ac.UpdatedAt = time.Now().UnixNano()
-	r.col.UpdateOne(nil, bson.M{"username": ac.Username}, bson.M{"$set": bson.M{"updated_at": ac.UpdatedAt}})
+	r.col.UpdateOne(nil, bson.M{"username": ac.Username}, bson.M{
+		"$set": bson.M{
+			"updated_at": ac.UpdatedAt,
+			"status":     account.Busy,
+		},
+	})
 	return ac
+}
+
+func (r *Repository) GetOldestUsed() *account.Account {
+	mux := sync.Mutex{}
+	mux.Lock()
+	defer mux.Unlock()
+	return r.getOldest()
 }
 
 var defaultRepo *Repository = nil

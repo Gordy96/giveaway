@@ -46,6 +46,31 @@ type BaseTaskModel struct {
 	FinishedAt int64              `json:"finished_at" bson:"finished_at"`
 }
 
+type DatabaseTaskResult interface {
+	CommentsTask() *CommentsTask
+	HashTagTask() *HashTagTask
+}
+
+func NewSingleDocumentResult(i interface{}) *SingleDocumentResult {
+	return &SingleDocumentResult{i}
+}
+
+type SingleDocumentResult struct {
+	value interface{}
+}
+
+func (s *SingleDocumentResult) CommentsTask() *CommentsTask {
+	return s.value.(*CommentsTask)
+}
+
+func (s *SingleDocumentResult) HashTagTask() *HashTagTask {
+	return s.value.(*HashTagTask)
+}
+
+type HasKey interface {
+	GetKey() interface{}
+}
+
 type CommentsTask struct {
 	BaseTaskModel `json:",inline" bson:",inline"`
 	ShortCode     string     `json:"shortcode" bson:"shortcode"`
@@ -56,9 +81,17 @@ type CommentsTask struct {
 	Position      int        `json:"position"`
 }
 
+func (c *CommentsTask) GetKey() interface{} {
+	return c.Id
+}
+
 type HashTagTask struct {
 	BaseTaskModel `json:",inline" bson:",inline"`
 	HashTag       string    `json:"hashtag" bson:"hashtag"`
 	Post          *TagMedia `json:"post,omitempty" bson:"post"`
 	Status        string    `json:"status" bson:"status"`
+}
+
+func (c *HashTagTask) GetKey() interface{} {
+	return c.Id
 }

@@ -8,7 +8,6 @@ import (
 	"giveaway/data"
 	httpErrors "giveaway/data/errors"
 	"io/ioutil"
-	"time"
 )
 
 type CommentCursor struct {
@@ -21,22 +20,13 @@ type CommentCursor struct {
 	suspender client.SuspendsThread
 }
 
-func (c *CommentCursor) Next() <-chan data.Comment {
+func (c *CommentCursor) Next() (<-chan data.Comment, <-chan error) {
 	resChan := make(chan data.Comment)
 	errChan := make(chan error)
-	go func() {
-		for {
-			e, ok := <-errChan
-			if !ok {
-				return
-			}
-			fmt.Printf("[%s]: %s", time.Now().String(), e.Error())
-		}
-	}()
 
 	go c.run(errChan, resChan)
 
-	return resChan
+	return resChan, errChan
 }
 
 func (c *CommentCursor) run(errChan chan error, resChan chan data.Comment) {

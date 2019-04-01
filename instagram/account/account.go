@@ -15,7 +15,8 @@ type AccountStatus string
 
 const (
 	New         AccountStatus = "new"
-	LoggedIn    AccountStatus = "logged_in"
+	Available   AccountStatus = "available"
+	Busy        AccountStatus = "busy"
 	Maintenance AccountStatus = "maintenance"
 	CheckPoint  AccountStatus = "checkpoint"
 	Error       AccountStatus = "error"

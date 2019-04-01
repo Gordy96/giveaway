@@ -184,20 +184,32 @@ func (c *Client) Login() (bool, error) {
 	return false, err
 }
 
-func (c *Client) QueryComments(code string, cb func(data.Comment) bool) {
+func (c *Client) QueryComments(code string, cb func(data.Comment) bool) error {
 	cursor := NewCommentCursor(c, code)
-	for post := range cursor.Next() {
-		if !cb(post) {
-			break
+	resChan, errChan := cursor.Next()
+	for {
+		select {
+		case post := <-resChan:
+			if !cb(post) {
+				return nil
+			}
+		case err := <-errChan:
+			return err
 		}
 	}
 }
 
-func (c *Client) QueryTag(tag string, cb func(data.TagMedia) bool) {
+func (c *Client) QueryTag(tag string, cb func(data.TagMedia) bool) error {
 	cursor := NewTagCursor(c, tag)
-	for post := range cursor.Next() {
-		if !cb(post) {
-			break
+	resChan, errChan := cursor.Next()
+	for {
+		select {
+		case post := <-resChan:
+			if !cb(post) {
+				return nil
+			}
+		case err := <-errChan:
+			return err
 		}
 	}
 }

@@ -28,7 +28,7 @@ func (c *ReLoginAccountCommand) Handle() {
 
 	success, _ := cl.Login()
 	if success {
-		c.acc.Status = account.LoggedIn
+		c.acc.Status = account.Available
 	} else {
 		c.acc.Status = account.CheckPoint
 	}

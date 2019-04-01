@@ -4,9 +4,11 @@ import (
 	"giveaway/client"
 	"giveaway/client/api"
 	"giveaway/data/errors"
+	"giveaway/instagram/account"
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/commands"
 	"giveaway/instagram/solver"
+	"time"
 )
 
 type DateRule struct {
@@ -47,13 +49,15 @@ func (f FollowingRule) Validate(i interface{}) (bool, error) {
 	var err error = nil
 
 	for {
-		acc := repo.GetOldestUsed()
+		acc := repo.GetOldestUsedRetries(5, 1*time.Second)
 		if acc == nil {
 			return false, errors.ValidationCriticalFailure{}
 		}
 		cl.SetAccount(acc)
 		is, err = cl.IsFollower(owner, f.Id)
 		if err == nil {
+			acc.Status = account.Available
+			repo.Save(acc)
 			break
 		}
 		switch err.(type) {
