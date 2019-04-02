@@ -49,7 +49,7 @@ func (f FollowsRule) Validate(i interface{}) (bool, error) {
 	var err error = nil
 
 	for {
-		acc := repo.GetOldestUsedRetries(5, 1*time.Second)
+		acc := repo.GetOldestUsedRetries(15, 2*time.Second)
 		if acc == nil {
 			return false, errors.ValidationCriticalFailure{}
 		}
