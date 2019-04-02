@@ -81,12 +81,12 @@ func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interfac
 		shouldChoose := true
 		for _, rule := range rules {
 			ruleResult, err := rule.Validate(temp)
+			if err != nil {
+				return -1, nil, err
+			}
 			if !ruleResult {
 				shouldChoose = false
 				break
-			}
-			if err != nil {
-				return -1, nil, err
 			}
 		}
 		if shouldChoose {
@@ -128,11 +128,13 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 		var shouldAdd = true
 		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&media)
-			switch /*e := */ err.(type) {
-			case errors.ShouldStopIterationError:
-				return false, err
-			default:
-				return false, err
+			if err != nil {
+				switch /*e := */ err.(type) {
+				case errors.ShouldStopIterationError:
+					return false, err
+				default:
+					return false, err
+				}
 			}
 			if !shouldAdd {
 				break
@@ -144,12 +146,12 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 		return true, nil
 	})
 	if err != nil {
-		logger.DefaultLogger().Error("error: %v", err)
+		logger.DefaultLogger().Errorf("error: %v", err)
 	}
 	winner, err := filterWinnerHashTag(&ret, rules.SelectRules())
 
 	if err != nil {
-		logger.DefaultLogger().Error("error: %v", err)
+		logger.DefaultLogger().Errorf("error: %v", err)
 	}
 
 	if winner != nil {
@@ -160,7 +162,7 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 	}
 	err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(task)
 	if err != nil {
-		logger.DefaultLogger().Error("error: %v", err)
+		logger.DefaultLogger().Errorf("error: %v", err)
 	}
 }
 
@@ -176,11 +178,13 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 		var shouldAdd = true
 		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&comment)
-			switch /*e := */ err.(type) {
-			case errors.ShouldStopIterationError:
-				return false, err
-			default:
-				return false, err
+			if err != nil {
+				switch /*e := */ err.(type) {
+				case errors.ShouldStopIterationError:
+					return false, err
+				default:
+					return false, err
+				}
 			}
 			if !shouldAdd {
 				break
@@ -193,13 +197,13 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 	})
 
 	if err != nil {
-		logger.DefaultLogger().Error("error: %v", err)
+		logger.DefaultLogger().Errorf("error: %v", err)
 	}
 
 	winnerId, winner, err := filterWinnerComment(&ret, rules.SelectRules())
 
 	if err != nil {
-		logger.DefaultLogger().Error("error: %v", err)
+		logger.DefaultLogger().Errorf("error: %v", err)
 	}
 
 	if winner != nil {
@@ -225,7 +229,7 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 
 	err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(task)
 	if err != nil {
-		logger.DefaultLogger().Error("error: %v", err)
+		logger.DefaultLogger().Errorf("error: %v", err)
 	}
 }
 
