@@ -10,7 +10,7 @@ type RuleType int
 
 const (
 	AppendRule RuleType = iota
-	SelectRule RuleType = AppendRule + 1
+	SelectRule
 )
 
 type IRule interface {
@@ -23,7 +23,20 @@ type RuleConstructorMap map[string]ConstructorFunc
 var constructorMap = RuleConstructorMap{
 	"DateRule": func(i interface{}) (RuleType, IRule) {
 		tArr := i.(map[string]interface{})["limits"].([]interface{})
-		rule := &rules.DateRule{"DateRule", [2]int64{int64(tArr[0].(float64)), int64(tArr[1].(float64))}}
+		limits := [2]int64{}
+		if len(tArr) == 1 {
+			if t := tArr[0]; t != nil {
+				limits[0] = int64(t.(float64))
+			}
+		} else {
+			if t := tArr[0]; t != nil {
+				limits[0] = int64(t.(float64))
+			}
+			if t := tArr[1]; t != nil {
+				limits[1] = int64(t.(float64))
+			}
+		}
+		rule := &rules.DateRule{"DateRule", limits}
 		return AppendRule, rule
 	},
 }

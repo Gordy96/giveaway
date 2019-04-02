@@ -22,7 +22,7 @@ func (d DateRule) GetName() string {
 
 func (d DateRule) Validate(i interface{}) (bool, error) {
 	examined := i.(client.HasDateAttribute).GetCreationDate()
-	if examined > d.Limits[1] {
+	if d.Limits[1] > 0 && examined > d.Limits[1] {
 		return false, nil
 	}
 	if examined < d.Limits[0] {
@@ -31,16 +31,16 @@ func (d DateRule) Validate(i interface{}) (bool, error) {
 	return true, nil
 }
 
-type FollowingRule struct {
+type FollowsRule struct {
 	Name string `json:"name"`
 	Id   string `json:"id"`
 }
 
-func (f FollowingRule) GetName() string {
+func (f FollowsRule) GetName() string {
 	return f.Name
 }
 
-func (f FollowingRule) Validate(i interface{}) (bool, error) {
+func (f FollowsRule) Validate(i interface{}) (bool, error) {
 	owner := i.(client.HasOwner).GetOwner()
 	repo := repository.GetRepositoryInstance()
 	cl := api.NewApiClient()

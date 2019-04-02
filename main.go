@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"giveaway/client/validation"
+	"giveaway/client/validation/rules"
 	"giveaway/client/web"
 	"giveaway/data"
 	"giveaway/data/errors"
@@ -229,6 +230,13 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 }
 
 func main() {
+	validation.RegisterRuleConstructor(validation.RuleConstructorMap{
+		"FollowsRule": func(i interface{}) (validation.RuleType, validation.IRule) {
+			idi := i.(map[string]interface{})["id"].(interface{})
+			rule := &rules.FollowsRule{"FollowsRule", idi.(string)}
+			return validation.SelectRule, rule
+		},
+	})
 	solv := solver.GetInstance()
 	solv.Run()
 	//repo := repository.GetRepositoryInstance()
