@@ -4,6 +4,7 @@ import (
 	"giveaway/client/api"
 	"giveaway/instagram/account"
 	"giveaway/instagram/account/repository"
+	"giveaway/utils/logger"
 	"net/http"
 )
 
@@ -26,11 +27,13 @@ func (c *ReLoginAccountCommand) Handle() {
 	cl := api.NewApiClient()
 	cl.SetAccount(c.acc)
 
-	success, _ := cl.Login()
+	success, err := cl.Login()
 	if success {
 		c.acc.Status = account.Available
+		logger.DefaultLogger().Infof("account %s (%s) is now logged in", c.acc.Username, c.acc.Id)
 	} else {
 		c.acc.Status = account.CheckPoint
+		logger.DefaultLogger().Infof("account %s (%s) can`t login (%s)", c.acc.Username, c.acc.Id, err.Error())
 	}
 	repo := repository.GetRepositoryInstance()
 	repo.Save(c.acc)
@@ -39,6 +42,7 @@ func (c *ReLoginAccountCommand) Handle() {
 }
 
 func MakeNewReLoginCommand(acc *account.Account) *ReLoginAccountCommand {
+	logger.DefaultLogger().Infof("account %s (%s) needs re-login", acc.Username, acc.Id)
 	c := &ReLoginAccountCommand{}
 	c.acc = acc
 	repo := repository.GetRepositoryInstance()

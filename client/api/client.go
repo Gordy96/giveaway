@@ -287,6 +287,9 @@ func (c *Client) Login() (bool, error) {
 		}
 		c.loggedIn = true
 		return true, nil
+	} else {
+		b, _ := json.Marshal(temp)
+		return false, fmt.Errorf("%s", string(b))
 	}
 
 	return false, err

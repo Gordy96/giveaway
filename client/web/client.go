@@ -184,14 +184,14 @@ func (c *Client) Login() (bool, error) {
 	return false, err
 }
 
-func (c *Client) QueryComments(code string, cb func(data.Comment) bool) error {
+func (c *Client) QueryComments(code string, cb func(data.Comment) (bool, error)) error {
 	cursor := NewCommentCursor(c, code)
 	resChan, errChan := cursor.Next()
 	for {
 		select {
 		case post := <-resChan:
-			if !cb(post) {
-				return nil
+			if r, err := cb(post); !r {
+				return err
 			}
 		case err := <-errChan:
 			return err
@@ -199,14 +199,14 @@ func (c *Client) QueryComments(code string, cb func(data.Comment) bool) error {
 	}
 }
 
-func (c *Client) QueryTag(tag string, cb func(data.TagMedia) bool) error {
+func (c *Client) QueryTag(tag string, cb func(data.TagMedia) (bool, error)) error {
 	cursor := NewTagCursor(c, tag)
 	resChan, errChan := cursor.Next()
 	for {
 		select {
 		case post := <-resChan:
-			if !cb(post) {
-				return nil
+			if r, err := cb(post); !r {
+				return err
 			}
 		case err := <-errChan:
 			return err

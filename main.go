@@ -7,8 +7,11 @@ import (
 	"giveaway/client/web"
 	"giveaway/data"
 	"giveaway/data/errors"
+	"giveaway/http/requests"
+	"giveaway/http/responses"
 	"giveaway/instagram/solver"
 	"giveaway/utils"
+	"giveaway/utils/logger"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 	"math/rand"
@@ -68,15 +71,6 @@ func (t *RandomEntryTask) LengthNoDuplicates() int {
 	return len(t.dupes)
 }
 
-var logger *utils.Logger = nil
-
-func GetLogger() *utils.Logger {
-	if logger == nil {
-		logger = utils.NewFileLogger()
-	}
-	return logger
-}
-
 func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interface{}, error) {
 	max := ret.LengthNoDuplicates()
 	i := 0
@@ -129,13 +123,15 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 	}}
 
 	var err error = nil
-	cl.QueryTag(task.HashTag, func(media data.TagMedia) bool {
+	err = cl.QueryTag(task.HashTag, func(media data.TagMedia) (bool, error) {
 		var shouldAdd = true
 		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&media)
 			switch /*e := */ err.(type) {
 			case errors.ShouldStopIterationError:
-				return false
+				return false, err
+			default:
+				return false, err
 			}
 			if !shouldAdd {
 				break
@@ -144,10 +140,17 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 		if shouldAdd {
 			ret.Add(&media)
 		}
-		return true
+		return true, nil
 	})
-
+	if err != nil {
+		logger.DefaultLogger().Error("error: %v", err)
+	}
 	winner, err := filterWinnerHashTag(&ret, rules.SelectRules())
+
+	if err != nil {
+		logger.DefaultLogger().Error("error: %v", err)
+	}
+
 	if winner != nil {
 		task.Post = winner
 		task.Status = "complete"
@@ -156,7 +159,7 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 	}
 	err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(task)
 	if err != nil {
-		panic(err)
+		logger.DefaultLogger().Error("error: %v", err)
 	}
 }
 
@@ -168,13 +171,15 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 		return e.(*data.Comment).Owner.Id
 	}}
 	var err error = nil
-	cl.QueryComments(task.ShortCode, func(comment data.Comment) bool {
+	err = cl.QueryComments(task.ShortCode, func(comment data.Comment) (bool, error) {
 		var shouldAdd = true
 		for _, rule := range rules.AppendRules() {
 			shouldAdd, err = rule.Validate(&comment)
 			switch /*e := */ err.(type) {
 			case errors.ShouldStopIterationError:
-				return false
+				return false, err
+			default:
+				return false, err
 			}
 			if !shouldAdd {
 				break
@@ -183,10 +188,18 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 		if shouldAdd {
 			ret.Add(&comment)
 		}
-		return true
+		return true, nil
 	})
 
+	if err != nil {
+		logger.DefaultLogger().Error("error: %v", err)
+	}
+
 	winnerId, winner, err := filterWinnerComment(&ret, rules.SelectRules())
+
+	if err != nil {
+		logger.DefaultLogger().Error("error: %v", err)
+	}
 
 	if winner != nil {
 		above := make([]*data.Comment, 0)
@@ -211,74 +224,8 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 
 	err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(task)
 	if err != nil {
-		panic(err)
+		logger.DefaultLogger().Error("error: %v", err)
 	}
-}
-
-type HasRulesJsonRequest struct {
-	Rules validation.RuleCollection `json:"rules"`
-}
-
-type CommentTaskJsonRequest struct {
-	HasRulesJsonRequest `json:",inline" bson:",inline"`
-	ShortCode           string `json:"shortcode" bson:"shortcode"`
-}
-
-type HashTagTaskJsonRequest struct {
-	HasRulesJsonRequest `json:",inline" bson:",inline"`
-	HashTag             string `json:"hashtag" bson:"hashtag"`
-}
-
-type HasStatusJsonResponse struct {
-	Status bool `json:"status" bson:"status"`
-}
-
-type NotFoundJsonResponse struct {
-	HasStatusJsonResponse `json:",inline"`
-	Error                 string `json:"error"`
-}
-
-func NewNotFoundJsonResponse() NotFoundJsonResponse {
-	r := NotFoundJsonResponse{}
-	r.Status = false
-	r.Error = "err_not_found"
-	return r
-}
-
-type ValidationErrorJsonResponse struct {
-	HasStatusJsonResponse `json:",inline"`
-	Error                 string `json:"error"`
-}
-
-func NewValidationErrorJsonResponse() ValidationErrorJsonResponse {
-	r := ValidationErrorJsonResponse{}
-	r.Status = false
-	r.Error = "request_validation_error"
-	return r
-}
-
-type SuccessfulCommentsTaskJsonResponse struct {
-	HasStatusJsonResponse `json:",inline"`
-	Result                data.CommentsTask `json:"result"`
-}
-
-func NewSuccessfulCommentsTaskJsonResponse(task data.CommentsTask) SuccessfulCommentsTaskJsonResponse {
-	r := SuccessfulCommentsTaskJsonResponse{}
-	r.Status = true
-	r.Result = task
-	return r
-}
-
-type SuccessfulHashTagTaskJsonResponse struct {
-	HasStatusJsonResponse `json:",inline"`
-	Result                data.HashTagTask `json:"result"`
-}
-
-func NewSuccessfulHashTagTaskJsonResponse(task data.HashTagTask) SuccessfulHashTagTaskJsonResponse {
-	r := SuccessfulHashTagTaskJsonResponse{}
-	r.Status = true
-	r.Result = task
-	return r
 }
 
 func main() {
@@ -316,25 +263,25 @@ func main() {
 						id, err := primitive.ObjectIDFromHex(c.Param("id"))
 
 						if err != nil {
-							c.JSON(404, NewNotFoundJsonResponse())
+							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
 						}
 						res, err := utils.GetNamedTasksRepositoryInstance("CommentTasks").FindCommentsTaskById(bsonx.ObjectID(id))
 
 						if err != nil {
-							c.JSON(404, NewNotFoundJsonResponse())
+							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
 						}
 
-						c.JSON(200, NewSuccessfulCommentsTaskJsonResponse(*res))
+						c.JSON(200, responses.NewSuccessfulCommentsTaskJsonResponse(*res))
 					})
 					comments.POST("/", func(c *gin.Context) {
 
-						var req CommentTaskJsonRequest
+						var req requests.CommentTaskJsonRequest
 						err := c.BindJSON(&req)
 
 						if err != nil {
-							c.JSON(400, NewValidationErrorJsonResponse())
+							c.JSON(400, responses.NewValidationErrorJsonResponse())
 							return
 						}
 						task := data.CommentsTask{}
@@ -348,7 +295,7 @@ func main() {
 						}
 
 						go execComments(&task, req.Rules)
-						c.JSON(200, NewSuccessfulCommentsTaskJsonResponse(task))
+						c.JSON(200, responses.NewSuccessfulCommentsTaskJsonResponse(task))
 					})
 				}
 				posts := tasks.Group("/posts")
@@ -357,26 +304,26 @@ func main() {
 						id, err := primitive.ObjectIDFromHex(c.Param("id"))
 
 						if err != nil {
-							c.JSON(404, NewNotFoundJsonResponse())
+							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
 						}
 
 						res, err := utils.GetNamedTasksRepositoryInstance("HashTagTasks").FindHashTagTaskById(bsonx.ObjectID(id))
 
 						if err != nil {
-							c.JSON(404, NewNotFoundJsonResponse())
+							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
 						}
 
-						c.JSON(200, NewSuccessfulHashTagTaskJsonResponse(*res))
+						c.JSON(200, responses.NewSuccessfulHashTagTaskJsonResponse(*res))
 					})
 					posts.POST("/", func(c *gin.Context) {
 
-						var req HashTagTaskJsonRequest
+						var req requests.HashTagTaskJsonRequest
 						err := c.BindJSON(&req)
 
 						if err != nil {
-							c.JSON(400, NewValidationErrorJsonResponse())
+							c.JSON(400, responses.NewValidationErrorJsonResponse())
 							return
 						}
 						task := data.HashTagTask{}
@@ -389,7 +336,7 @@ func main() {
 						}
 
 						go execPosts(&task, req.Rules)
-						c.JSON(200, NewSuccessfulHashTagTaskJsonResponse(task))
+						c.JSON(200, responses.NewSuccessfulHashTagTaskJsonResponse(task))
 					})
 				}
 			}

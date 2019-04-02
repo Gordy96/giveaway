@@ -46,27 +46,6 @@ type BaseTaskModel struct {
 	FinishedAt int64              `json:"finished_at" bson:"finished_at"`
 }
 
-type DatabaseTaskResult interface {
-	CommentsTask() *CommentsTask
-	HashTagTask() *HashTagTask
-}
-
-func NewSingleDocumentResult(i interface{}) *SingleDocumentResult {
-	return &SingleDocumentResult{i}
-}
-
-type SingleDocumentResult struct {
-	value interface{}
-}
-
-func (s *SingleDocumentResult) CommentsTask() *CommentsTask {
-	return s.value.(*CommentsTask)
-}
-
-func (s *SingleDocumentResult) HashTagTask() *HashTagTask {
-	return s.value.(*HashTagTask)
-}
-
 type HasKey interface {
 	GetKey() interface{}
 }
