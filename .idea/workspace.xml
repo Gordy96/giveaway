@@ -2,7 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4c6f766d-277f-4492-9ae4-44a2cd73406f" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/data/сontainers/containers.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/instagram/structures/structures.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/api/useragent_generator.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/api/useragent_generator.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/validation/rules/rules.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/validation/rules/rules.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/validation/validation.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/validation/validation.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/web/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/web/client.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/web/comment_cursor.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/web/comment_cursor.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/web/default_suspender.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/web/default_suspender.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/web/tag_cursor.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/web/tag_cursor.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/data.go" beforeDir="false" afterPath="$PROJECT_DIR$/data/data.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/instagram/instagram.go" beforeDir="false" afterPath="$PROJECT_DIR$/instagram/instagram.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -27,33 +38,33 @@
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="gitignore" value="1" />
-          <entry key="go" value="381" />
+          <entry key="go" value="394" />
           <entry key="json" value="7" />
           <entry key="md" value="1" />
           <entry key="raw" value="1" />
-          <entry key="s" value="3" />
+          <entry key="s" value="4" />
           <entry key="toml" value="1" />
-          <entry key="txt" value="6" />
+          <entry key="txt" value="7" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Go" value="381" />
+          <entry key="Go" value="394" />
           <entry key="JSON" value="7" />
-          <entry key="PLAIN_TEXT" value="10" />
-          <entry key="x86 Plan9 Assembly" value="3" />
+          <entry key="PLAIN_TEXT" value="11" />
+          <entry key="x86 Plan9 Assembly" value="4" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="gitignore" value="25" />
-          <entry key="go" value="36021" />
+          <entry key="go" value="40576" />
           <entry key="txt" value="321" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Go" value="36021" />
+          <entry key="Go" value="40576" />
           <entry key="PLAIN_TEXT" value="346" />
         </counts>
       </usages-collector>
@@ -64,37 +75,15 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="223">
-              <caret line="157" column="26" lean-forward="true" selection-start-line="157" selection-start-column="26" selection-end-line="157" selection-end-column="26" />
+            <state relative-caret-position="434">
+              <caret line="274" column="17" lean-forward="true" selection-start-line="274" selection-start-column="17" selection-end-line="274" selection-end-column="17" />
               <folding>
-                <element signature="n#!!block;n#Add#0" />
-                <element signature="n#!!block;n#Length#0" />
-                <element signature="n#!!block;n#LengthNoDuplicates#0" />
+                <element signature="e#14#486#0" expanded="true" />
+                <element signature="n#!!block;n#filterWinner#0" />
                 <element signature="n#!!block;n#filterWinnerHashTag#0" />
+                <element signature="n#!!block;n#filterWinnerComment#0" />
+                <element signature="n#!!block;n#execPosts#0" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/log_20190402.txt">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/http/requests/requests.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="170">
-              <caret line="10" column="47" selection-start-line="10" selection-start-column="38" selection-end-line="10" selection-end-column="47" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://C:/Go/src/runtime/panic.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="346">
-              <caret line="686" column="62" lean-forward="true" selection-start-line="686" selection-start-column="62" selection-end-line="686" selection-end-column="62" />
             </state>
           </provider>
         </entry>
@@ -102,8 +91,29 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client/validation/validation.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-459">
-              <caret line="25" column="18" selection-start-line="25" selection-start-column="18" selection-end-line="25" selection-end-column="18" />
+            <state relative-caret-position="153">
+              <caret line="25" column="40" selection-start-line="25" selection-start-column="40" selection-end-line="25" selection-end-column="40" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/data/data.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="330">
+              <caret line="70" column="66" selection-start-line="70" selection-start-column="66" selection-end-line="70" selection-end-column="66" />
+              <folding>
+                <element signature="e#14#100#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/utils/tasks_repository.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="442">
+              <caret line="32" column="21" selection-start-line="32" selection-start-column="21" selection-end-line="32" selection-end-column="21" />
             </state>
           </provider>
         </entry>
@@ -111,55 +121,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client/validation/rules/rules.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="268">
-              <caret line="53" selection-start-line="53" selection-end-line="53" />
+            <state relative-caret-position="330">
+              <caret line="165" column="24" selection-start-line="165" selection-start-column="24" selection-end-line="165" selection-end-column="24" />
               <folding>
                 <element signature="e#15#192#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/instagram/account/repository/repository.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="387">
-              <caret line="39" column="6" lean-forward="true" selection-start-line="39" selection-start-column="6" selection-end-line="39" selection-end-column="6" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/instagram/commands/commands.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="595">
-              <caret line="35" column="8" lean-forward="true" selection-start-line="35" selection-start-column="8" selection-end-line="35" selection-end-column="8" />
-              <folding>
-                <element signature="e#18#134#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/client/web/client.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="428">
-              <caret line="209" column="13" selection-start-line="209" selection-start-column="13" selection-end-line="209" selection-end-column="13" />
-              <folding>
-                <element signature="e#13#233#0" expanded="true" />
-                <element signature="n#!!block;n#getResponseString#0" />
-                <element signature="n#!!block;n#makeRequest#0" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/client/web/comment_cursor.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1494">
-              <caret line="138" column="5" selection-start-line="138" selection-start-column="5" selection-end-line="138" selection-end-column="5" />
             </state>
           </provider>
         </entry>
@@ -175,12 +141,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>instagramWebFBAppId</find>
-      <find>struct</find>
-      <find>acc</find>
-      <find>logger</find>
-      <find>prepare</find>
-      <find>port</find>
       <find>Parse</find>
       <find>cookie</find>
       <find>Jar</find>
@@ -200,6 +160,17 @@
       <find>DatabaseTaskResult</find>
       <find>error while</find>
       <find>DefaultLogger</find>
+      <find>critical error while processing</find>
+      <find>ValidationCriticalFailure</find>
+      <find>NewWebClient</find>
+      <find>PageInfo</find>
+      <find>Owner</find>
+      <find>first</find>
+      <find>e0f59e4a1c8d78d0161873bc2ee7ec44</find>
+      <find>int</find>
+      <find>int</find>
+      <find>HasKey</find>
+      <find>postcondition</find>
     </findStrings>
   </component>
   <component name="GOROOT" path="C:\Go" />
@@ -213,7 +184,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/nodes.go" />
         <option value="$PROJECT_DIR$/data/nodes.go" />
         <option value="$PROJECT_DIR$/data/error.go" />
         <option value="$PROJECT_DIR$/data/errors.go" />
@@ -245,8 +215,6 @@
         <option value="$PROJECT_DIR$/client/interfaces.go" />
         <option value="$PROJECT_DIR$/data/errors/errors.go" />
         <option value="$PROJECT_DIR$/instagram/solver/solver.go" />
-        <option value="$PROJECT_DIR$/client/web/tag_cursor.go" />
-        <option value="$PROJECT_DIR$/client/web/comment_cursor.go" />
         <option value="$PROJECT_DIR$/utils/tasks_repository.go" />
         <option value="$PROJECT_DIR$/instagram/account/account.go" />
         <option value="$PROJECT_DIR$/instagram/account/repository/repository.go" />
@@ -255,12 +223,17 @@
         <option value="$PROJECT_DIR$/http/requests/requests.go" />
         <option value="$PROJECT_DIR$/utils/utils.go" />
         <option value="$PROJECT_DIR$/utils/logger/logger.go" />
-        <option value="$PROJECT_DIR$/data/data.go" />
-        <option value="$PROJECT_DIR$/client/api/client.go" />
         <option value="$PROJECT_DIR$/instagram/commands/commands.go" />
+        <option value="$PROJECT_DIR$/log_20190402.txt" />
+        <option value="$PROJECT_DIR$/client/api/client.go" />
+        <option value="$PROJECT_DIR$/client/web/comment_cursor.go" />
+        <option value="$PROJECT_DIR$/client/web/tag_cursor.go" />
         <option value="$PROJECT_DIR$/client/web/client.go" />
-        <option value="$PROJECT_DIR$/client/validation/validation.go" />
+        <option value="$PROJECT_DIR$/instagram/structures/structures.go" />
+        <option value="$PROJECT_DIR$/data/сontainers/containers.go" />
         <option value="$PROJECT_DIR$/client/validation/rules/rules.go" />
+        <option value="$PROJECT_DIR$/data/data.go" />
+        <option value="$PROJECT_DIR$/client/validation/validation.go" />
         <option value="$PROJECT_DIR$/main.go" />
       </list>
     </option>
@@ -299,6 +272,12 @@
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
               <item name="giveaway" type="462c0819:PsiDirectoryNode" />
               <item name="client" type="462c0819:PsiDirectoryNode" />
+              <item name="api" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
+              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
+              <item name="client" type="462c0819:PsiDirectoryNode" />
               <item name="validation" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -311,18 +290,13 @@
             <path>
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
               <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="data" type="462c0819:PsiDirectoryNode" />
+              <item name="client" type="462c0819:PsiDirectoryNode" />
+              <item name="web" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
               <item name="giveaway" type="462c0819:PsiDirectoryNode" />
               <item name="data" type="462c0819:PsiDirectoryNode" />
-              <item name="errors" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
-              <item name="giveaway" type="462c0819:PsiDirectoryNode" />
-              <item name="http" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
@@ -333,7 +307,7 @@
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
               <item name="giveaway" type="462c0819:PsiDirectoryNode" />
               <item name="instagram" type="462c0819:PsiDirectoryNode" />
-              <item name="commands" type="462c0819:PsiDirectoryNode" />
+              <item name="structures" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="giveaway" type="b2602c69:ProjectViewProjectNode" />
@@ -392,13 +366,13 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19189766" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.19189766" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.329718" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49946696" weight="0.329718" />
-      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.3991323" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49946696" visible="true" weight="0.329718" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3991323" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -481,34 +455,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://C:/Go/src/net/http/cookiejar/jar.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-5093">
-          <caret line="59" column="5" selection-start-line="59" selection-start-column="5" selection-end-line="59" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://C:/Go/src/net/http/client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="442">
-          <caret line="698" column="35" selection-start-line="698" selection-start-column="27" selection-end-line="698" selection-end-column="35" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/client/web/default_suspender.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="4" selection-start-line="4" selection-end-line="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://C:/Go/src/runtime/sema.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="197">
-          <caret line="55" selection-start-line="55" selection-end-line="55" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/Go/src/sync/waitgroup.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="287">
@@ -624,16 +570,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/client/web/tag_cursor.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="292">
-          <caret line="26" column="27" selection-start-line="26" selection-start-column="27" selection-end-line="26" selection-end-column="27" />
-          <folding>
-            <element signature="e#13#149#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/instagram/solver/solver.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="100">
@@ -690,16 +626,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="316">
           <caret line="175" selection-start-line="175" selection-end-line="175" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/tasks_repository.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="236">
-          <caret line="24" column="26" selection-start-line="24" selection-start-column="26" selection-end-line="24" selection-end-column="26" />
-          <folding>
-            <element signature="e#15#189#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -774,70 +700,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/data/data.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-34">
-          <caret line="46" column="1" selection-start-line="46" selection-start-column="1" selection-end-line="46" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/client/api/client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="394">
-          <caret line="291" column="34" selection-start-line="291" selection-start-column="34" selection-end-line="291" selection-end-column="34" />
-          <folding>
-            <element signature="e#13#342#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/instagram/account/repository/repository.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="387">
           <caret line="39" column="6" lean-forward="true" selection-start-line="39" selection-start-column="6" selection-end-line="39" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/client/web/comment_cursor.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1494">
-          <caret line="138" column="5" selection-start-line="138" selection-start-column="5" selection-end-line="138" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/instagram/commands/commands.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="595">
-          <caret line="35" column="8" lean-forward="true" selection-start-line="35" selection-start-column="8" selection-end-line="35" selection-end-column="8" />
-          <folding>
-            <element signature="e#18#134#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/client/web/client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="428">
-          <caret line="209" column="13" selection-start-line="209" selection-start-column="13" selection-end-line="209" selection-end-column="13" />
-          <folding>
-            <element signature="e#13#233#0" expanded="true" />
-            <element signature="n#!!block;n#getResponseString#0" />
-            <element signature="n#!!block;n#makeRequest#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://C:/Go/src/runtime/proc.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="346">
-          <caret line="154" selection-start-line="154" selection-end-line="154" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/client/validation/validation.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-459">
-          <caret line="25" column="18" selection-start-line="25" selection-start-column="18" selection-end-line="25" selection-end-column="18" />
         </state>
       </provider>
     </entry>
@@ -855,28 +721,146 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Go/src/runtime/asm_amd64.s">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="176">
+          <caret line="1333" selection-start-line="1333" selection-end-line="1333" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/log_20190402.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="1" column="74" lean-forward="true" selection-start-line="1" selection-start-column="43" selection-end-line="1" selection-end-column="74" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client/web/default_suspender.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="4" selection-start-line="4" selection-end-line="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client/api/client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="26">
+          <caret line="295" column="1" selection-start-line="295" selection-start-column="1" selection-end-line="295" selection-end-column="1" />
+          <folding>
+            <element signature="e#13#342#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Go/src/runtime/proc.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="346">
+          <caret line="209" selection-start-line="209" selection-end-line="209" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client/web/tag_cursor.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="765">
+          <caret line="49" column="45" selection-start-line="49" selection-start-column="45" selection-end-line="49" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client/web/comment_cursor.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="765">
+          <caret line="45" column="51" selection-start-line="45" selection-start-column="51" selection-end-line="45" selection-end-column="51" />
+          <folding>
+            <element signature="e#13#141#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/instagram/commands/commands.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="595">
+          <caret line="35" column="8" lean-forward="true" selection-start-line="35" selection-start-column="8" selection-end-line="35" selection-end-column="8" />
+          <folding>
+            <element signature="e#18#134#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/instagram/structures/structures.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="646">
+          <caret line="56" column="69" lean-forward="true" selection-start-line="56" selection-start-column="69" selection-end-line="56" selection-end-column="69" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client/web/client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="687">
+          <caret line="440" column="60" selection-start-line="440" selection-start-column="60" selection-end-line="440" selection-end-column="60" />
+          <folding>
+            <element signature="e#13#233#0" expanded="true" />
+            <element signature="n#!!block;n#getResponseString#0" />
+            <element signature="n#!!block;n#makeRequest#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/data/сontainers/containers.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-34">
+          <caret line="10" column="7" selection-start-line="10" selection-start-column="4" selection-end-line="10" selection-end-column="7" />
+          <folding>
+            <element signature="e#20#58#0" expanded="true" />
+            <element signature="n#!!block;n#Length#0" />
+            <element signature="n#!!block;n#LengthNoDuplicates#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/tasks_repository.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="442">
+          <caret line="32" column="21" selection-start-line="32" selection-start-column="21" selection-end-line="32" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/client/validation/rules/rules.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="268">
-          <caret line="53" selection-start-line="53" selection-end-line="53" />
+        <state relative-caret-position="330">
+          <caret line="165" column="24" selection-start-line="165" selection-start-column="24" selection-end-line="165" selection-end-column="24" />
           <folding>
             <element signature="e#15#192#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/log_20190402.txt">
-      <provider selected="true" editor-type-id="text-editor" />
+    <entry file="file://$PROJECT_DIR$/data/data.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="330">
+          <caret line="70" column="66" selection-start-line="70" selection-start-column="66" selection-end-line="70" selection-end-column="66" />
+          <folding>
+            <element signature="e#14#100#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/client/validation/validation.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="25" column="40" selection-start-line="25" selection-start-column="40" selection-end-line="25" selection-end-column="40" />
+        </state>
+      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="223">
-          <caret line="157" column="26" lean-forward="true" selection-start-line="157" selection-start-column="26" selection-end-line="157" selection-end-column="26" />
+        <state relative-caret-position="434">
+          <caret line="274" column="17" lean-forward="true" selection-start-line="274" selection-start-column="17" selection-end-line="274" selection-end-column="17" />
           <folding>
-            <element signature="n#!!block;n#Add#0" />
-            <element signature="n#!!block;n#Length#0" />
-            <element signature="n#!!block;n#LengthNoDuplicates#0" />
+            <element signature="e#14#486#0" expanded="true" />
+            <element signature="n#!!block;n#filterWinner#0" />
             <element signature="n#!!block;n#filterWinnerHashTag#0" />
+            <element signature="n#!!block;n#filterWinnerComment#0" />
+            <element signature="n#!!block;n#execPosts#0" />
           </folding>
         </state>
       </provider>

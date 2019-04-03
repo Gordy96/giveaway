@@ -5,9 +5,12 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"giveaway/data"
+	httpErrors "giveaway/data/errors"
 	"giveaway/instagram/account"
+	"giveaway/instagram/structures"
 	"giveaway/utils"
 	"io"
 	"io/ioutil"
@@ -220,4 +223,224 @@ func (c *Client) SetAccount(acc *account.Account) {
 
 func (c *Client) GetAccount() *account.Account {
 	return c.acc
+}
+
+func (c *Client) GetUserInfo(username string) (*data.User, error) {
+	req, err := c.makeRequest("GET", fmt.Sprintf("https://www.instagram.com/%s/?__a=1", username), nil)
+	if err != nil {
+		return nil, err
+	}
+	c.prepare(req)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	str, _ := ioutil.ReadAll(resp.Body)
+	temp := &structures.UserInfoResponse{}
+	err = json.Unmarshal([]byte(str), &temp)
+	if err == nil {
+		return nil, fmt.Errorf("%v", temp)
+	}
+	u := &data.User{}
+	u.Username = temp.GraphQL.User.Username
+	u.Id = temp.GraphQL.User.ID
+	u.Follows = int64(temp.GraphQL.User.EdgeFollow.Count)
+	u.Followers = int64(temp.GraphQL.User.EdgeFollowedBy.Count)
+	u.IsBusiness = temp.GraphQL.User.IsBusinessAccount
+	u.IsPrivate = temp.GraphQL.User.IsPrivate
+	u.IsVerified = temp.GraphQL.User.IsVerified
+	return u, nil
+}
+
+func (c *Client) GetShortCodeMediaInfo(shortcode string, cursor string) (*structures.ShortCodeMediaResponse, error, string) {
+	var query []byte
+	var err error
+
+	var hash string
+
+	if cursor == "" {
+		hash = "477b65a610463740ccdb83135b2014db"
+		query, err = json.Marshal(map[string]interface{}{
+			"shortcode":             shortcode,
+			"child_comment_count":   0,
+			"fetch_comment_count":   50,
+			"parent_comment_count":  0,
+			"has_threaded_comments": false,
+		})
+		if err != nil {
+			return nil, err, ""
+		}
+	} else {
+		hash = "f0986789a5c5d17c2400faebf16efd0d"
+		query, err = json.Marshal(map[string]interface{}{
+			"shortcode": shortcode,
+			"first":     50,
+			"after":     cursor,
+		})
+		if err != nil {
+			return nil, err, ""
+		}
+	}
+
+	req, err := c.makeRequest("GET", "https://www.instagram.com/graphql/query/", nil)
+	q := req.URL.Query()
+	q.Set("query_hash", hash)
+	q.Set("variables", string(query))
+	req.URL.RawQuery = q.Encode()
+	c.prepare(req)
+
+	resp, err := c.getHttpClient().Do(req)
+	if err != nil {
+		return nil, err, ""
+	}
+	if resp.StatusCode != 200 {
+		switch resp.StatusCode {
+		case 403:
+			return nil, httpErrors.HttpForbidden{}, ""
+		case 429:
+			return nil, httpErrors.HttpTooManyRequests{}, ""
+		default:
+			return nil, errors.New(fmt.Sprintf("%d %s", resp.StatusCode, resp.Status)), ""
+		}
+	}
+	bts, _ := ioutil.ReadAll(resp.Body)
+	d := &structures.ShortCodeMediaResponse{}
+	err = json.Unmarshal(bts, d)
+	if err != nil {
+		return nil, err, ""
+	}
+
+	hasNext := d.Data.ShortCodeMedia.EdgeMediaToComment.PageInfo.HasNextPage
+	if hasNext {
+		cursor = d.Data.ShortCodeMedia.EdgeMediaToComment.PageInfo.EndCursor
+	} else {
+		cursor = ""
+	}
+
+	return d, nil, cursor
+}
+
+func (c *Client) GetTagPosts(tag string, cursor string) (*structures.HashTagResponse, error, string) {
+	var query []byte
+	var err error
+
+	hash := "f92f56d47dc7a55b606908374b43a314"
+
+	variables := map[string]interface{}{
+		"tag_name":    tag,
+		"show_ranked": false,
+		"first":       50,
+	}
+
+	if cursor != "" {
+		variables["after"] = cursor
+	}
+
+	query, err = json.Marshal(variables)
+	if err != nil {
+		return nil, err, ""
+	}
+
+	req, _ := c.makeRequest("GET", "https://www.instagram.com/graphql/query/", nil)
+
+	q := req.URL.Query()
+	q.Set("query_hash", hash)
+
+	q.Set("variables", string(query))
+	req.URL.RawQuery = q.Encode()
+	c.prepare(req)
+
+	resp, err := c.getHttpClient().Do(req)
+	if err != nil {
+		return nil, err, ""
+	}
+
+	if resp.StatusCode != 200 {
+		switch resp.StatusCode {
+		case 403:
+			return nil, httpErrors.HttpForbidden{}, ""
+		case 429:
+			return nil, httpErrors.HttpTooManyRequests{}, ""
+		default:
+			return nil, errors.New(fmt.Sprintf("%d %s", resp.StatusCode, resp.Status)), ""
+		}
+	}
+
+	bts, _ := ioutil.ReadAll(resp.Body)
+	d := &structures.HashTagResponse{}
+	err = json.Unmarshal(bts, &d)
+	if err != nil {
+		return nil, err, ""
+	}
+
+	hasNext := d.Data.HashTag.EdgeHashTagToMedia.PageInfo.HasNextPage
+	if hasNext {
+		cursor = d.Data.HashTag.EdgeHashTagToMedia.PageInfo.EndCursor
+	} else {
+		cursor = ""
+	}
+	return d, nil, cursor
+}
+
+func (c *Client) GetShortCodeMediaLikers(shortcode string, cursor string) (*structures.ShortCodeMediaLikersResponse, error, string) {
+	var query []byte
+	var err error
+
+	hash := "e0f59e4a1c8d78d0161873bc2ee7ec44"
+
+	variables := map[string]interface{}{
+		"shortcode":    shortcode,
+		"include_reel": true,
+		"first":        24,
+	}
+
+	if cursor != "" {
+		variables["after"] = cursor
+	}
+
+	query, err = json.Marshal(variables)
+	if err != nil {
+		return nil, err, ""
+	}
+
+	req, _ := c.makeRequest("GET", "https://www.instagram.com/graphql/query/", nil)
+
+	q := req.URL.Query()
+	q.Set("query_hash", hash)
+
+	q.Set("variables", string(query))
+	req.URL.RawQuery = q.Encode()
+	c.prepare(req)
+
+	resp, err := c.getHttpClient().Do(req)
+	if err != nil {
+		return nil, err, ""
+	}
+
+	if resp.StatusCode != 200 {
+		switch resp.StatusCode {
+		case 403:
+			return nil, httpErrors.HttpForbidden{}, ""
+		case 429:
+			return nil, httpErrors.HttpTooManyRequests{}, ""
+		default:
+			return nil, errors.New(fmt.Sprintf("%d %s", resp.StatusCode, resp.Status)), ""
+		}
+	}
+
+	bts, _ := ioutil.ReadAll(resp.Body)
+	d := &structures.ShortCodeMediaLikersResponse{}
+	err = json.Unmarshal(bts, &d)
+	if err != nil {
+		return nil, err, ""
+	}
+
+	hasNext := d.Data.ShortCodeMedia.EdgeLikedBy.PageInfo.HasNextPage
+	if hasNext {
+		cursor = d.Data.ShortCodeMedia.EdgeLikedBy.PageInfo.EndCursor
+	} else {
+		cursor = ""
+	}
+	return d, nil, cursor
 }

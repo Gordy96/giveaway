@@ -8,6 +8,7 @@ import (
 	"giveaway/client/web"
 	"giveaway/data"
 	"giveaway/data/errors"
+	"giveaway/data/сontainers"
 	"giveaway/http/requests"
 	"giveaway/http/responses"
 	"giveaway/instagram/solver"
@@ -15,64 +16,9 @@ import (
 	"giveaway/utils/logger"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/x/bsonx"
-	"math/rand"
-	"time"
 )
 
-type Entry struct {
-	Key   string
-	Value interface{}
-}
-
-type RandomEntryTask struct {
-	data      []Entry
-	dupes     map[string][]int
-	keyGetter func(interface{}) string
-}
-
-func (t *RandomEntryTask) Get(i int) *Entry {
-	if i < 0 {
-		panic(fmt.Errorf("index < 0"))
-	}
-	return &t.data[i]
-}
-
-func (t *RandomEntryTask) GetRandomIndexNoDuplicates() int {
-	l := len(t.data) - 1
-	randomizer := rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomizer.Seed(time.Now().UnixNano())
-	var idx = -1
-	for {
-		idx = randomizer.Intn(l)
-		entry := t.data[idx]
-		if dupes := t.dupes[entry.Key]; len(dupes) == 1 && dupes[0] == idx {
-			break
-		}
-	}
-	return idx
-}
-
-func (t *RandomEntryTask) Add(value interface{}) {
-	idx := len(t.data)
-
-	entry := Entry{t.keyGetter(value), value}
-	t.data = append(t.data, entry)
-	if dup, in := t.dupes[entry.Key]; in {
-		t.dupes[entry.Key] = append([]int{idx}, dup...)
-	} else {
-		t.dupes[entry.Key] = []int{idx}
-	}
-}
-
-func (t *RandomEntryTask) Length() int {
-	return len(t.data)
-}
-
-func (t *RandomEntryTask) LengthNoDuplicates() int {
-	return len(t.dupes)
-}
-
-func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interface{}, error) {
+func filterWinner(ret *сontainers.EntryContainer, rules []validation.IRule) (int, interface{}, error) {
 	max := ret.LengthNoDuplicates()
 	i := 0
 	for {
@@ -99,7 +45,7 @@ func filterWinner(ret *RandomEntryTask, rules []validation.IRule) (int, interfac
 	}
 }
 
-func filterWinnerHashTag(ret *RandomEntryTask, rules []validation.IRule) (*data.TagMedia, error) {
+func filterWinnerHashTag(ret *сontainers.EntryContainer, rules []validation.IRule) (*data.TagMedia, error) {
 	_, t, e := filterWinner(ret, rules)
 	if t != nil {
 		return t.(*data.TagMedia), nil
@@ -107,7 +53,7 @@ func filterWinnerHashTag(ret *RandomEntryTask, rules []validation.IRule) (*data.
 	return nil, e
 }
 
-func filterWinnerComment(ret *RandomEntryTask, rules []validation.IRule) (int, *data.Comment, error) {
+func filterWinnerComment(ret *сontainers.EntryContainer, rules []validation.IRule) (int, *data.Comment, error) {
 	i, t, e := filterWinner(ret, rules)
 	if t != nil {
 		return i, t.(*data.Comment), e
@@ -115,18 +61,48 @@ func filterWinnerComment(ret *RandomEntryTask, rules []validation.IRule) (int, *
 	return -1, nil, e
 }
 
-func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
+func runRules(rules []validation.IRule, arg interface{}, failCallback func(validation.IRule) error) (bool, error) {
+	for _, rule := range rules {
+		ruleRes, err := rule.Validate(arg)
+		if err != nil {
+			logger.DefaultLogger().Errorf("error: %v", err)
+			return false, err
+		}
+		if !ruleRes {
+			return false, failCallback(rule)
+		}
+	}
+	return true, nil
+}
+
+func execPosts(task *data.HashTagTask) {
 	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
-	ret := RandomEntryTask{make([]Entry, 0), make(map[string][]int, 0), func(e interface{}) string {
-		return e.(*data.TagMedia).Owner.Id
-	}}
-
 	var err error = nil
+	var ruleRes bool
+	repo := utils.GetNamedTasksRepositoryInstance("HashTagTasks")
+	dLogger := logger.DefaultLogger()
+	ruleRes, err = runRules(task.PreconditionRules, cl, func(rule validation.IRule) error {
+		task.Status = "cancelled"
+		task.Comment = fmt.Sprintf("failed on precondition rule: %v", rule)
+		err = repo.Save(task)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		dLogger.Errorf("error: %v", err)
+	}
+	if !ruleRes {
+		return
+	}
+
+	ret := сontainers.NewEntryContainer()
 	err = cl.QueryTag(task.HashTag, func(media data.TagMedia) (bool, error) {
 		var shouldAdd = true
-		for _, rule := range rules.AppendRules() {
+		for _, rule := range task.AppendRules {
 			shouldAdd, err = rule.Validate(&media)
 			if err != nil {
 				switch /*e := */ err.(type) {
@@ -146,12 +122,29 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 		return true, nil
 	})
 	if err != nil {
-		logger.DefaultLogger().Errorf("error: %v", err)
+		dLogger.Errorf("error: %v", err)
 	}
-	winner, err := filterWinnerHashTag(&ret, rules.SelectRules())
+
+	ruleRes, err = runRules(task.PostconditionRules, ret, func(rule validation.IRule) error {
+		task.Status = "failed"
+		task.Comment = fmt.Sprintf("failed on postcondition rule: %v", rule)
+		err = repo.Save(task)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		dLogger.Errorf("error: %v", err)
+	}
+	if !ruleRes {
+		return
+	}
+
+	winner, err := filterWinnerHashTag(ret, task.SelectRules)
 
 	if err != nil {
-		logger.DefaultLogger().Errorf("error: %v", err)
+		dLogger.Errorf("error: %v", err)
 	}
 
 	if winner != nil {
@@ -160,23 +153,40 @@ func execPosts(task *data.HashTagTask, rules validation.RuleCollection) {
 	} else {
 		task.Status = "cannot_decide_winner"
 	}
-	err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(task)
+	err = repo.Save(task)
 	if err != nil {
-		logger.DefaultLogger().Errorf("error: %v", err)
+		dLogger.Errorf("error: %v", err)
 	}
 }
 
-func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
+func execComments(task *data.CommentsTask) {
 	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
 	cl.Init()
 
-	ret := RandomEntryTask{make([]Entry, 0), make(map[string][]int, 0), func(e interface{}) string {
-		return e.(*data.Comment).Owner.Id
-	}}
+	ret := сontainers.NewEntryContainer()
+	repo := utils.GetNamedTasksRepositoryInstance("CommentTasks")
+	dLogger := logger.DefaultLogger()
 	var err error = nil
+	var ruleRes bool
+	ruleRes, err = runRules(task.PreconditionRules, cl, func(rule validation.IRule) error {
+		task.Status = "cancelled"
+		task.Comment = fmt.Sprintf("failed on precondition rule: %v", rule)
+		err = repo.Save(task)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		dLogger.Errorf("error: %v", err)
+	}
+	if !ruleRes {
+		return
+	}
+
 	err = cl.QueryComments(task.ShortCode, func(comment data.Comment) (bool, error) {
 		var shouldAdd = true
-		for _, rule := range rules.AppendRules() {
+		for _, rule := range task.AppendRules {
 			shouldAdd, err = rule.Validate(&comment)
 			if err != nil {
 				switch /*e := */ err.(type) {
@@ -197,13 +207,29 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 	})
 
 	if err != nil {
-		logger.DefaultLogger().Errorf("error: %v", err)
+		dLogger.Errorf("error: %v", err)
 	}
 
-	winnerId, winner, err := filterWinnerComment(&ret, rules.SelectRules())
+	ruleRes, err = runRules(task.PostconditionRules, ret, func(rule validation.IRule) error {
+		task.Status = "failed"
+		task.Comment = fmt.Sprintf("failed on postcondition rule: %v", rule)
+		err = repo.Save(task)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		dLogger.Errorf("error: %v", err)
+	}
+	if !ruleRes {
+		return
+	}
+
+	winnerId, winner, err := filterWinnerComment(ret, task.SelectRules)
 
 	if err != nil {
-		logger.DefaultLogger().Errorf("error: %v", err)
+		dLogger.Errorf("error: %v", err)
 	}
 
 	if winner != nil {
@@ -213,7 +239,7 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 		for i := winnerId - 1; i >= 0 && i >= winnerId-2; i-- {
 			above = append([]*data.Comment{ret.Get(i).Value.(*data.Comment)}, above...)
 		}
-		for i := winnerId + 1; i < len(ret.data) && i <= winnerId+2; i++ {
+		for i := winnerId + 1; i < ret.Length() && i <= winnerId+2; i++ {
 			below = append(below, ret.Get(i).Value.(*data.Comment))
 		}
 
@@ -227,20 +253,67 @@ func execComments(task *data.CommentsTask, rules validation.RuleCollection) {
 		task.Status = "cannot_decide_winner"
 	}
 
-	err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(task)
+	err = repo.Save(task)
 	if err != nil {
-		logger.DefaultLogger().Errorf("error: %v", err)
+		dLogger.Errorf("error: %v", err)
 	}
 }
 
 func main() {
+
 	validation.RegisterRuleConstructor(validation.RuleConstructorMap{
+		"DateRule": func(i interface{}) (validation.RuleType, validation.IRule) {
+			tArr := i.(map[string]interface{})["limits"].([]interface{})
+			limits := [2]int64{}
+			if len(tArr) == 1 {
+				if t := tArr[0]; t != nil {
+					limits[0] = int64(t.(float64))
+				}
+			} else {
+				if t := tArr[0]; t != nil {
+					limits[0] = int64(t.(float64))
+				}
+				if t := tArr[1]; t != nil {
+					limits[1] = int64(t.(float64))
+				}
+			}
+			rule := &rules.DateRule{Name: "DateRule", Limits: limits}
+			return validation.AppendRule, rule
+		},
 		"FollowsRule": func(i interface{}) (validation.RuleType, validation.IRule) {
 			idi := i.(map[string]interface{})["id"].(interface{})
-			rule := &rules.FollowsRule{"FollowsRule", idi.(string)}
+			rule := &rules.FollowsRule{Name: "FollowsRule", Id: idi.(string)}
 			return validation.SelectRule, rule
 		},
+		"FollowersRule": func(i interface{}) (validation.RuleType, validation.IRule) {
+			username := i.(map[string]interface{})["username"].(interface{})
+			amount := i.(map[string]interface{})["amount"].(interface{})
+			condition := i.(map[string]interface{})["condition"].(interface{})
+			rule := &rules.FollowersRule{Name: "FollowersRule", Amount: int64(amount.(float64)), Username: username.(string), Condition: condition.(string)}
+			return validation.PreconditionRule, rule
+		},
+		"PostLikesRule": func(i interface{}) (validation.RuleType, validation.IRule) {
+			shortcode := i.(map[string]interface{})["shortcode"].(interface{})
+			amount := i.(map[string]interface{})["amount"].(interface{})
+			condition := i.(map[string]interface{})["condition"].(interface{})
+			rule := &rules.PostLikesRule{Name: "PostLikesRule", Amount: int64(amount.(float64)), ShortCode: shortcode.(string), Condition: condition.(string)}
+			return validation.PreconditionRule, rule
+		},
+		"PostCommentsRule": func(i interface{}) (validation.RuleType, validation.IRule) {
+			shortcode := i.(map[string]interface{})["shortcode"].(interface{})
+			amount := i.(map[string]interface{})["amount"].(interface{})
+			condition := i.(map[string]interface{})["condition"].(interface{})
+			rule := &rules.PostCommentsRule{Name: "PostCommentsRule", Amount: int64(amount.(float64)), ShortCode: shortcode.(string), Condition: condition.(string)}
+			return validation.PreconditionRule, rule
+		},
+		"ParticipantsRule": func(i interface{}) (validation.RuleType, validation.IRule) {
+			amount := i.(map[string]interface{})["amount"].(interface{})
+			condition := i.(map[string]interface{})["condition"].(interface{})
+			rule := &rules.ParticipantsRule{Name: "ParticipantsRule", Amount: int64(amount.(float64)), Condition: condition.(string)}
+			return validation.PostconditionRule, rule
+		},
 	})
+
 	solv := solver.GetInstance()
 	solv.Run()
 	//repo := repository.GetRepositoryInstance()
@@ -296,18 +369,22 @@ func main() {
 							c.JSON(400, responses.NewValidationErrorJsonResponse())
 							return
 						}
-						task := data.CommentsTask{}
+						task := &data.CommentsTask{}
 						task.ShortCode = req.ShortCode
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(&task)
+						task.PreconditionRules = req.Rules.PreconditionRules()
+						task.AppendRules = req.Rules.AppendRules()
+						task.PostconditionRules = req.Rules.PostconditionRules()
+						task.SelectRules = req.Rules.SelectRules()
+						err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(task)
 
 						if err != nil {
 							panic(err)
 						}
 
-						go execComments(&task, req.Rules)
-						c.JSON(200, responses.NewSuccessfulCommentsTaskJsonResponse(task))
+						go execComments(task)
+						c.JSON(200, responses.NewSuccessfulCommentsTaskJsonResponse(*task))
 					})
 				}
 				posts := tasks.Group("/posts")
@@ -338,17 +415,21 @@ func main() {
 							c.JSON(400, responses.NewValidationErrorJsonResponse())
 							return
 						}
-						task := data.HashTagTask{}
+						task := &data.HashTagTask{}
 						task.HashTag = req.HashTag
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(&task)
+						task.PreconditionRules = req.Rules.PreconditionRules()
+						task.AppendRules = req.Rules.AppendRules()
+						task.PostconditionRules = req.Rules.PostconditionRules()
+						task.SelectRules = req.Rules.SelectRules()
+						err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(task)
 						if err != nil {
 							panic(err)
 						}
 
-						go execPosts(&task, req.Rules)
-						c.JSON(200, responses.NewSuccessfulHashTagTaskJsonResponse(task))
+						go execPosts(task)
+						c.JSON(200, responses.NewSuccessfulHashTagTaskJsonResponse(*task))
 					})
 				}
 			}

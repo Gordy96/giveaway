@@ -3,7 +3,6 @@ package web
 import "time"
 
 type defaultSuspender struct {
-
 }
 
 func (c *defaultSuspender) Sleep() {

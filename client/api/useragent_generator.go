@@ -6,7 +6,6 @@ import (
 )
 
 type AppUserAgentGenerator struct {
-
 }
 
 func (u AppUserAgentGenerator) Get() string {

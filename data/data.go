@@ -1,10 +1,22 @@
 package data
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"giveaway/client/validation"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Owner struct {
 	Id       string `json:"id" bson:"id"`
 	Username string `json:"username" bson:"username"`
+}
+
+type User struct {
+	Owner      `json:",inline" bson:",inline"`
+	Follows    int64 `json:"follows" bson:"follows"`
+	Followers  int64 `json:"followers" bson:"followers"`
+	IsBusiness bool  `json:"is_business" bson:"is_business"`
+	IsPrivate  bool  `json:"is_private" bson:"is_private"`
+	IsVerified bool  `json:"is_verified" bson:"is_verified"`
 }
 
 type Comment struct {
@@ -16,6 +28,10 @@ type Comment struct {
 
 func (c *Comment) GetOwner() *Owner {
 	return &c.Owner
+}
+
+func (c *Comment) GetKey() interface{} {
+	return c.Owner.Id
 }
 
 func (c *Comment) GetCreationDate() int64 {
@@ -40,10 +56,20 @@ func (t *TagMedia) GetOwner() *Owner {
 	return &t.Owner
 }
 
+func (t *TagMedia) GetKey() interface{} {
+	return t.Owner.Id
+}
+
 type BaseTaskModel struct {
-	Id         primitive.ObjectID `json:"_id,omitempty" bson:"_id"`
-	CreatedAt  int64              `json:"created_at" bson:"created_at"`
-	FinishedAt int64              `json:"finished_at" bson:"finished_at"`
+	Id                 primitive.ObjectID `json:"_id,omitempty" bson:"_id"`
+	CreatedAt          int64              `json:"created_at" bson:"created_at"`
+	FinishedAt         int64              `json:"finished_at" bson:"finished_at"`
+	Status             string             `json:"status" bson:"status"`
+	Comment            string             `json:"comment" bson:"comment"`
+	PreconditionRules  []validation.IRule `json:"precondition_rules" bson:"precondition_rules"`
+	AppendRules        []validation.IRule `json:"append_rules" append_rules:"rules"`
+	SelectRules        []validation.IRule `json:"select_rules" bson:"select_rules"`
+	PostconditionRules []validation.IRule `json:"postcondition_rules" bson:"postcondition_rules"`
 }
 
 type HasKey interface {
@@ -56,7 +82,6 @@ type CommentsTask struct {
 	Winner        *Comment   `json:"winner" bson:"winner"`
 	Above         []*Comment `json:"above" bson:"above"`
 	Below         []*Comment `json:"below" bson:"below"`
-	Status        string     `json:"status" bson:"status"`
 	Position      int        `json:"position"`
 }
 
@@ -68,7 +93,6 @@ type HashTagTask struct {
 	BaseTaskModel `json:",inline" bson:",inline"`
 	HashTag       string    `json:"hashtag" bson:"hashtag"`
 	Post          *TagMedia `json:"post,omitempty" bson:"post"`
-	Status        string    `json:"status" bson:"status"`
 }
 
 func (c *HashTagTask) GetKey() interface{} {

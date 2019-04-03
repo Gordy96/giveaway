@@ -1,12 +1,12 @@
 package instagram
 
 type ConstantSet struct {
-	Experiments 		string
-	Configs 			string
-	AppID				string
-	Key					string
-	VersionIncremental	string
-	Capabilities		string
+	Experiments        string
+	Configs            string
+	AppID              string
+	Key                string
+	VersionIncremental string
+	Capabilities       string
 }
 
 var Constants = map[string]ConstantSet{

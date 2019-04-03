@@ -2,44 +2,28 @@ package validation
 
 import (
 	"encoding/json"
-	"giveaway/client/validation/rules"
+	"fmt"
 	"giveaway/data/errors"
 )
 
 type RuleType int
 
 const (
-	AppendRule RuleType = iota
+	PreconditionRule RuleType = iota
+	AppendRule
+	PostconditionRule
 	SelectRule
 )
 
 type IRule interface {
+	fmt.Stringer
 	Validate(interface{}) (bool, error)
 }
 
 type ConstructorFunc func(interface{}) (RuleType, IRule)
 type RuleConstructorMap map[string]ConstructorFunc
 
-var constructorMap = RuleConstructorMap{
-	"DateRule": func(i interface{}) (RuleType, IRule) {
-		tArr := i.(map[string]interface{})["limits"].([]interface{})
-		limits := [2]int64{}
-		if len(tArr) == 1 {
-			if t := tArr[0]; t != nil {
-				limits[0] = int64(t.(float64))
-			}
-		} else {
-			if t := tArr[0]; t != nil {
-				limits[0] = int64(t.(float64))
-			}
-			if t := tArr[1]; t != nil {
-				limits[1] = int64(t.(float64))
-			}
-		}
-		rule := &rules.DateRule{"DateRule", limits}
-		return AppendRule, rule
-	},
-}
+var constructorMap = RuleConstructorMap{}
 
 func RegisterRuleConstructor(set RuleConstructorMap) {
 	for name, function := range set {
@@ -48,8 +32,10 @@ func RegisterRuleConstructor(set RuleConstructorMap) {
 }
 
 type RuleCollection struct {
-	appendingRules []IRule
-	selectRules    []IRule
+	preconditionRules  []IRule
+	appendingRules     []IRule
+	postconditionRules []IRule
+	selectRules        []IRule
 }
 
 func (r *RuleCollection) AppendRules() []IRule {
@@ -58,6 +44,14 @@ func (r *RuleCollection) AppendRules() []IRule {
 
 func (r *RuleCollection) SelectRules() []IRule {
 	return r.selectRules
+}
+
+func (r *RuleCollection) PreconditionRules() []IRule {
+	return r.preconditionRules
+}
+
+func (r *RuleCollection) PostconditionRules() []IRule {
+	return r.postconditionRules
 }
 
 func (r *RuleCollection) getConstructorFor(s map[string]interface{}) ConstructorFunc {
@@ -73,6 +67,10 @@ func (r *RuleCollection) UnmarshalJSON(b []byte) error {
 			switch t, rule := e(entry); t {
 			case AppendRule:
 				r.appendingRules = append(r.appendingRules, rule)
+			case PreconditionRule:
+				r.preconditionRules = append(r.preconditionRules, rule)
+			case PostconditionRule:
+				r.postconditionRules = append(r.postconditionRules, rule)
 			case SelectRule:
 				r.selectRules = append(r.selectRules, rule)
 			}
