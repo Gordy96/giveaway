@@ -4,19 +4,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"giveaway/data/errors"
+	bjson "giveaway/utils/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type RuleType int
 
 const (
 	PreconditionRule RuleType = iota
-	AppendRule
+	AppendingRule
 	PostconditionRule
 	SelectRule
 )
 
 type IRule interface {
 	fmt.Stringer
+	bson.Marshaler
+	bson.Unmarshaler
 	Validate(interface{}) (bool, error)
 }
 
@@ -32,26 +36,10 @@ func RegisterRuleConstructor(set RuleConstructorMap) {
 }
 
 type RuleCollection struct {
-	preconditionRules  []IRule
-	appendingRules     []IRule
-	postconditionRules []IRule
-	selectRules        []IRule
-}
-
-func (r *RuleCollection) AppendRules() []IRule {
-	return r.appendingRules
-}
-
-func (r *RuleCollection) SelectRules() []IRule {
-	return r.selectRules
-}
-
-func (r *RuleCollection) PreconditionRules() []IRule {
-	return r.preconditionRules
-}
-
-func (r *RuleCollection) PostconditionRules() []IRule {
-	return r.postconditionRules
+	PreconditionRules  []IRule `json:"precondition_rules" bson:"precondition_rules"`
+	AppendingRules     []IRule `json:"appending_rules" bson:"appending_rules"`
+	PostconditionRules []IRule `json:"postcondition_rules" bson:"postcondition_rules"`
+	SelectRules        []IRule `json:"select_rules" bson:"select_rules"`
 }
 
 func (r *RuleCollection) getConstructorFor(s map[string]interface{}) ConstructorFunc {
@@ -60,19 +48,31 @@ func (r *RuleCollection) getConstructorFor(s map[string]interface{}) Constructor
 }
 
 func (r *RuleCollection) UnmarshalJSON(b []byte) error {
-	var raw []map[string]interface{}
-	json.Unmarshal(b, &raw)
+	var m map[string]interface{}
+	var raw = make([]map[string]interface{}, 0)
+	json.Unmarshal(b, &m)
+	if m != nil {
+		for _, v := range m {
+			if v != nil {
+				for _, t := range v.([]interface{}) {
+					raw = append(raw, t.(map[string]interface{}))
+				}
+			}
+		}
+	} else {
+		json.Unmarshal(b, &raw)
+	}
 	for _, entry := range raw {
 		if e := r.getConstructorFor(entry); e != nil {
 			switch t, rule := e(entry); t {
-			case AppendRule:
-				r.appendingRules = append(r.appendingRules, rule)
+			case AppendingRule:
+				r.AppendingRules = append(r.AppendingRules, rule)
 			case PreconditionRule:
-				r.preconditionRules = append(r.preconditionRules, rule)
+				r.PreconditionRules = append(r.PreconditionRules, rule)
 			case PostconditionRule:
-				r.postconditionRules = append(r.postconditionRules, rule)
+				r.PostconditionRules = append(r.PostconditionRules, rule)
 			case SelectRule:
-				r.selectRules = append(r.selectRules, rule)
+				r.SelectRules = append(r.SelectRules, rule)
 			}
 		} else {
 			return errors.UnknownRuleError{}
@@ -80,4 +80,8 @@ func (r *RuleCollection) UnmarshalJSON(b []byte) error {
 	}
 
 	return nil
+}
+
+func (r *RuleCollection) UnmarshalBSON(b []byte) error {
+	return bjson.BSONToStruct(b, r)
 }

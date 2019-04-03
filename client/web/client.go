@@ -239,7 +239,7 @@ func (c *Client) GetUserInfo(username string) (*data.User, error) {
 	str, _ := ioutil.ReadAll(resp.Body)
 	temp := &structures.UserInfoResponse{}
 	err = json.Unmarshal([]byte(str), &temp)
-	if err == nil {
+	if err != nil {
 		return nil, fmt.Errorf("%v", temp)
 	}
 	u := &data.User{}
@@ -309,6 +309,9 @@ func (c *Client) GetShortCodeMediaInfo(shortcode string, cursor string) (*struct
 	err = json.Unmarshal(bts, d)
 	if err != nil {
 		return nil, err, ""
+	}
+	if d.Data.ShortCodeMedia == nil {
+		return nil, fmt.Errorf("%s", bts), ""
 	}
 
 	hasNext := d.Data.ShortCodeMedia.EdgeMediaToComment.PageInfo.HasNextPage

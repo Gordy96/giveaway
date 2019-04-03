@@ -59,6 +59,7 @@ func (c *CommentCursor) SetSuspender(suspender client.SuspendsThread) {
 func NewCommentCursor(c *Client, code string) *CommentCursor {
 	cursor := &CommentCursor{}
 	cursor.client = c
+	cursor.code = code
 	cursor.suspender = &defaultSuspender{}
 
 	return cursor

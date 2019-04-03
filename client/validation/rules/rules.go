@@ -12,17 +12,26 @@ import (
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/commands"
 	"giveaway/instagram/solver"
+	"giveaway/utils/bson"
 	"time"
 )
 
 type DateRule struct {
-	Name   string   `json:"name"`
-	Limits [2]int64 `json:"limits"`
+	Name   string   `json:"name" bson:"name"`
+	Limits [2]int64 `json:"limits" bson:"limits"`
 }
 
 func (d DateRule) String() string {
 	bts, _ := json.Marshal(d)
 	return string(bts)
+}
+
+func (d DateRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(d)
+}
+
+func (d DateRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &d)
 }
 
 func (d DateRule) Validate(i interface{}) (bool, error) {
@@ -37,13 +46,21 @@ func (d DateRule) Validate(i interface{}) (bool, error) {
 }
 
 type FollowsRule struct {
-	Name string `json:"name"`
-	Id   string `json:"id"`
+	Name string `json:"name" bson:"name"`
+	Id   string `json:"id" bson:"id"`
 }
 
 func (f FollowsRule) String() string {
 	bts, _ := json.Marshal(f)
 	return string(bts)
+}
+
+func (f FollowsRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(f)
+}
+
+func (f FollowsRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &f)
 }
 
 func (f FollowsRule) Validate(i interface{}) (bool, error) {
@@ -94,10 +111,18 @@ func checkCondition(con string, arg0, arg1 int64) bool {
 }
 
 type FollowersRule struct {
-	Name      string `json:"name"`
-	Amount    int64  `json:"amount"`
-	Username  string `json:"username"`
-	Condition string `json:"condition"`
+	Name      string `json:"name" bson:"name"`
+	Amount    int64  `json:"amount" bson:"amount"`
+	Username  string `json:"username" bson:"username"`
+	Condition string `json:"condition" bson:"condition"`
+}
+
+func (f FollowersRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(f)
+}
+
+func (f FollowersRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &f)
 }
 
 func (f FollowersRule) String() string {
@@ -115,10 +140,18 @@ func (f FollowersRule) Validate(i interface{}) (bool, error) {
 }
 
 type PostLikesRule struct {
-	Name      string `json:"name"`
-	Amount    int64  `json:"amount"`
-	ShortCode string `json:"shortcode"`
-	Condition string `json:"condition"`
+	Name      string `json:"name" bson:"name"`
+	Amount    int64  `json:"amount" bson:"amount"`
+	ShortCode string `json:"shortcode" bson:"shortcode"`
+	Condition string `json:"condition" bson:"condition"`
+}
+
+func (p PostLikesRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(p)
+}
+
+func (p PostLikesRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &p)
 }
 
 func (p PostLikesRule) String() string {
@@ -136,10 +169,18 @@ func (p PostLikesRule) Validate(i interface{}) (bool, error) {
 }
 
 type PostCommentsRule struct {
-	Name      string `json:"name"`
-	Amount    int64  `json:"amount"`
-	ShortCode string `json:"shortcode"`
-	Condition string `json:"condition"`
+	Name      string `json:"name" bson:"name"`
+	Amount    int64  `json:"amount" bson:"amount"`
+	ShortCode string `json:"shortcode" bson:"shortcode"`
+	Condition string `json:"condition" bson:"condition"`
+}
+
+func (p PostCommentsRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(p)
+}
+
+func (p PostCommentsRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &p)
 }
 
 func (p PostCommentsRule) String() string {
@@ -157,9 +198,17 @@ func (p PostCommentsRule) Validate(i interface{}) (bool, error) {
 }
 
 type ParticipantsRule struct {
-	Name      string `json:"name"`
-	Amount    int64  `json:"amount"`
-	Condition string `json:"condition"`
+	Name      string `json:"name" bson:"name"`
+	Amount    int64  `json:"amount" bson:"amount"`
+	Condition string `json:"condition" bson:"condition"`
+}
+
+func (p ParticipantsRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(p)
+}
+
+func (p ParticipantsRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &p)
 }
 
 func (p ParticipantsRule) String() string {

@@ -83,7 +83,7 @@ func execPosts(task *data.HashTagTask) {
 	var ruleRes bool
 	repo := utils.GetNamedTasksRepositoryInstance("HashTagTasks")
 	dLogger := logger.DefaultLogger()
-	ruleRes, err = runRules(task.PreconditionRules, cl, func(rule validation.IRule) error {
+	ruleRes, err = runRules(task.Rules.PreconditionRules, cl, func(rule validation.IRule) error {
 		task.Status = "cancelled"
 		task.Comment = fmt.Sprintf("failed on precondition rule: %v", rule)
 		err = repo.Save(task)
@@ -102,7 +102,7 @@ func execPosts(task *data.HashTagTask) {
 	ret := сontainers.NewEntryContainer()
 	err = cl.QueryTag(task.HashTag, func(media data.TagMedia) (bool, error) {
 		var shouldAdd = true
-		for _, rule := range task.AppendRules {
+		for _, rule := range task.Rules.AppendingRules {
 			shouldAdd, err = rule.Validate(&media)
 			if err != nil {
 				switch /*e := */ err.(type) {
@@ -125,7 +125,7 @@ func execPosts(task *data.HashTagTask) {
 		dLogger.Errorf("error: %v", err)
 	}
 
-	ruleRes, err = runRules(task.PostconditionRules, ret, func(rule validation.IRule) error {
+	ruleRes, err = runRules(task.Rules.PostconditionRules, ret, func(rule validation.IRule) error {
 		task.Status = "failed"
 		task.Comment = fmt.Sprintf("failed on postcondition rule: %v", rule)
 		err = repo.Save(task)
@@ -141,7 +141,7 @@ func execPosts(task *data.HashTagTask) {
 		return
 	}
 
-	winner, err := filterWinnerHashTag(ret, task.SelectRules)
+	winner, err := filterWinnerHashTag(ret, task.Rules.SelectRules)
 
 	if err != nil {
 		dLogger.Errorf("error: %v", err)
@@ -168,7 +168,7 @@ func execComments(task *data.CommentsTask) {
 	dLogger := logger.DefaultLogger()
 	var err error = nil
 	var ruleRes bool
-	ruleRes, err = runRules(task.PreconditionRules, cl, func(rule validation.IRule) error {
+	ruleRes, err = runRules(task.Rules.PreconditionRules, cl, func(rule validation.IRule) error {
 		task.Status = "cancelled"
 		task.Comment = fmt.Sprintf("failed on precondition rule: %v", rule)
 		err = repo.Save(task)
@@ -186,7 +186,7 @@ func execComments(task *data.CommentsTask) {
 
 	err = cl.QueryComments(task.ShortCode, func(comment data.Comment) (bool, error) {
 		var shouldAdd = true
-		for _, rule := range task.AppendRules {
+		for _, rule := range task.Rules.AppendingRules {
 			shouldAdd, err = rule.Validate(&comment)
 			if err != nil {
 				switch /*e := */ err.(type) {
@@ -210,7 +210,7 @@ func execComments(task *data.CommentsTask) {
 		dLogger.Errorf("error: %v", err)
 	}
 
-	ruleRes, err = runRules(task.PostconditionRules, ret, func(rule validation.IRule) error {
+	ruleRes, err = runRules(task.Rules.PostconditionRules, ret, func(rule validation.IRule) error {
 		task.Status = "failed"
 		task.Comment = fmt.Sprintf("failed on postcondition rule: %v", rule)
 		err = repo.Save(task)
@@ -226,7 +226,7 @@ func execComments(task *data.CommentsTask) {
 		return
 	}
 
-	winnerId, winner, err := filterWinnerComment(ret, task.SelectRules)
+	winnerId, winner, err := filterWinnerComment(ret, task.Rules.SelectRules)
 
 	if err != nil {
 		dLogger.Errorf("error: %v", err)
@@ -278,7 +278,7 @@ func main() {
 				}
 			}
 			rule := &rules.DateRule{Name: "DateRule", Limits: limits}
-			return validation.AppendRule, rule
+			return validation.AppendingRule, rule
 		},
 		"FollowsRule": func(i interface{}) (validation.RuleType, validation.IRule) {
 			idi := i.(map[string]interface{})["id"].(interface{})
@@ -373,10 +373,7 @@ func main() {
 						task.ShortCode = req.ShortCode
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						task.PreconditionRules = req.Rules.PreconditionRules()
-						task.AppendRules = req.Rules.AppendRules()
-						task.PostconditionRules = req.Rules.PostconditionRules()
-						task.SelectRules = req.Rules.SelectRules()
+						task.Rules = req.Rules
 						err = utils.GetNamedTasksRepositoryInstance("CommentTasks").Save(task)
 
 						if err != nil {
@@ -419,10 +416,7 @@ func main() {
 						task.HashTag = req.HashTag
 						task.Status = "in_progress"
 						task.Id = primitive.NewObjectID()
-						task.PreconditionRules = req.Rules.PreconditionRules()
-						task.AppendRules = req.Rules.AppendRules()
-						task.PostconditionRules = req.Rules.PostconditionRules()
-						task.SelectRules = req.Rules.SelectRules()
+						task.Rules = req.Rules
 						err = utils.GetNamedTasksRepositoryInstance("HashTagTasks").Save(task)
 						if err != nil {
 							panic(err)

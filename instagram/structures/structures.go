@@ -7,7 +7,7 @@ type PageInfo struct {
 
 type ShortCodeMediaResponse struct {
 	Data struct {
-		ShortCodeMedia struct {
+		ShortCodeMedia *struct {
 			Typename   string `json:"__typename"`
 			ID         string `json:"id"`
 			ShortCode  string `json:"shortcode"`
@@ -106,7 +106,7 @@ type ShortCodeMediaResponse struct {
 
 type HashTagResponse struct {
 	Data struct {
-		HashTag struct {
+		HashTag *struct {
 			ID                 string `json:"id"`
 			Name               string `json:"name"`
 			AllowFollowing     bool   `json:"allow_following"`
@@ -213,7 +213,7 @@ type UserInfoResponse struct {
 	LoggingPageID         string `json:"logging_page_id"`
 	ShowSuggestedProfiles bool   `json:"show_suggested_profiles"`
 	GraphQL               struct {
-		User struct {
+		User *struct {
 			Biography              string `json:"biography"`
 			BlockedByViewer        bool   `json:"blocked_by_viewer"`
 			CountryBlock           bool   `json:"country_block"`
@@ -327,7 +327,7 @@ type UserInfoResponse struct {
 
 type ShortCodeMediaLikersResponse struct {
 	Data struct {
-		ShortCodeMedia struct {
+		ShortCodeMedia *struct {
 			ID          string `json:"id"`
 			ShortCode   string `json:"shortcode"`
 			EdgeLikedBy struct {

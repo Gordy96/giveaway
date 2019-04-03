@@ -54,6 +54,8 @@ func (t *EntryContainer) LengthNoDuplicates() int {
 
 func NewEntryContainer() *EntryContainer {
 	c := &EntryContainer{}
+	c.dupes = map[string][]int{}
+	c.data = make([]Entry, 0)
 	c.add = func(ins data.HasKey) {
 		idx := len(c.data)
 

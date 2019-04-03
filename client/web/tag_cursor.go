@@ -7,8 +7,6 @@ import (
 )
 
 type TagMediaCursor struct {
-	cursor    string
-	hasNext   bool
 	tag       string
 	client    *Client
 	suspender client.SuspendsThread
@@ -62,8 +60,6 @@ func (c *TagMediaCursor) SetSuspender(suspender client.SuspendsThread) {
 
 func NewTagCursor(c *Client, tag string) *TagMediaCursor {
 	cursor := &TagMediaCursor{}
-	cursor.cursor = ""
-	cursor.hasNext = true
 	cursor.tag = tag
 	cursor.client = c
 	return cursor

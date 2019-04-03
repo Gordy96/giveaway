@@ -61,15 +61,12 @@ func (t *TagMedia) GetKey() interface{} {
 }
 
 type BaseTaskModel struct {
-	Id                 primitive.ObjectID `json:"_id,omitempty" bson:"_id"`
-	CreatedAt          int64              `json:"created_at" bson:"created_at"`
-	FinishedAt         int64              `json:"finished_at" bson:"finished_at"`
-	Status             string             `json:"status" bson:"status"`
-	Comment            string             `json:"comment" bson:"comment"`
-	PreconditionRules  []validation.IRule `json:"precondition_rules" bson:"precondition_rules"`
-	AppendRules        []validation.IRule `json:"append_rules" append_rules:"rules"`
-	SelectRules        []validation.IRule `json:"select_rules" bson:"select_rules"`
-	PostconditionRules []validation.IRule `json:"postcondition_rules" bson:"postcondition_rules"`
+	Id         primitive.ObjectID        `json:"_id,omitempty" bson:"_id"`
+	CreatedAt  int64                     `json:"created_at" bson:"created_at"`
+	FinishedAt int64                     `json:"finished_at" bson:"finished_at"`
+	Status     string                    `json:"status" bson:"status"`
+	Comment    string                    `json:"comment" bson:"comment"`
+	Rules      validation.RuleCollection `json:"rules" bson:"rules"`
 }
 
 type HasKey interface {
