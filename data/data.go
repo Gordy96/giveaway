@@ -67,19 +67,24 @@ type BaseTaskModel struct {
 	Status     string                    `json:"status" bson:"status"`
 	Comment    string                    `json:"comment" bson:"comment"`
 	Rules      validation.RuleCollection `json:"rules" bson:"rules"`
+	NumWinners int                       `json:"num_winners"`
 }
 
 type HasKey interface {
 	GetKey() interface{}
 }
 
+type CommentWinner struct {
+	Winner   *Comment   `json:"winner" bson:"winner"`
+	Above    []*Comment `json:"above" bson:"above"`
+	Below    []*Comment `json:"below" bson:"below"`
+	Position int        `json:"position" bson:"position"`
+}
+
 type CommentsTask struct {
 	BaseTaskModel `json:",inline" bson:",inline"`
-	ShortCode     string     `json:"shortcode" bson:"shortcode"`
-	Winner        *Comment   `json:"winner" bson:"winner"`
-	Above         []*Comment `json:"above" bson:"above"`
-	Below         []*Comment `json:"below" bson:"below"`
-	Position      int        `json:"position"`
+	ShortCode     string          `json:"shortcode" bson:"shortcode"`
+	Winners       []CommentWinner `json:"winner" bson:"winner"`
 }
 
 func (c *CommentsTask) GetKey() interface{} {
@@ -88,8 +93,8 @@ func (c *CommentsTask) GetKey() interface{} {
 
 type HashTagTask struct {
 	BaseTaskModel `json:",inline" bson:",inline"`
-	HashTag       string    `json:"hashtag" bson:"hashtag"`
-	Post          *TagMedia `json:"post,omitempty" bson:"post"`
+	HashTag       string      `json:"hashtag" bson:"hashtag"`
+	Winners       []*TagMedia `json:"winners" bson:"winners"`
 }
 
 func (c *HashTagTask) GetKey() interface{} {

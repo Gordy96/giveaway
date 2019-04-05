@@ -141,14 +141,23 @@ func execPosts(task *data.HashTagTask) {
 		return
 	}
 
-	winner, err := filterWinnerHashTag(ret, task.Rules.SelectRules)
+	task.Winners = make([]*data.TagMedia, 0)
 
-	if err != nil {
-		dLogger.Errorf("error: %v", err)
+	for i := 0; i < task.NumWinners; i++ {
+
+		winner, err := filterWinnerHashTag(ret, task.Rules.SelectRules)
+
+		if err != nil {
+			dLogger.Errorf("error: %v", err)
+		}
+		if winner != nil {
+			task.Winners = append(task.Winners, winner)
+		} else {
+			break
+		}
 	}
 
-	if winner != nil {
-		task.Post = winner
+	if len(task.Winners) == task.NumWinners {
 		task.Status = "complete"
 	} else {
 		task.Status = "cannot_decide_winner"
@@ -226,28 +235,37 @@ func execComments(task *data.CommentsTask) {
 		return
 	}
 
-	winnerId, winner, err := filterWinnerComment(ret, task.Rules.SelectRules)
+	task.Winners = make([]data.CommentWinner, 0)
+	for i := 0; i < task.NumWinners; i++ {
+		winnerId, winner, err := filterWinnerComment(ret, task.Rules.SelectRules)
+		var wSet data.CommentWinner
+		if err != nil {
+			dLogger.Errorf("error: %v", err)
+		}
 
-	if err != nil {
-		dLogger.Errorf("error: %v", err)
+		if winner != nil {
+			above := make([]*data.Comment, 0)
+			below := make([]*data.Comment, 0)
+
+			for i := winnerId - 1; i >= 0 && i >= winnerId-2; i-- {
+				above = append([]*data.Comment{ret.Get(i).Value.(*data.Comment)}, above...)
+			}
+			for i := winnerId + 1; i < ret.Length() && i <= winnerId+2; i++ {
+				below = append(below, ret.Get(i).Value.(*data.Comment))
+			}
+
+			wSet.Winner = winner
+			wSet.Above = above
+			wSet.Below = below
+
+			wSet.Position = winnerId
+			task.Winners = append(task.Winners, wSet)
+		} else {
+			break
+		}
 	}
 
-	if winner != nil {
-		above := make([]*data.Comment, 0)
-		below := make([]*data.Comment, 0)
-
-		for i := winnerId - 1; i >= 0 && i >= winnerId-2; i-- {
-			above = append([]*data.Comment{ret.Get(i).Value.(*data.Comment)}, above...)
-		}
-		for i := winnerId + 1; i < ret.Length() && i <= winnerId+2; i++ {
-			below = append(below, ret.Get(i).Value.(*data.Comment))
-		}
-
-		task.Winner = winner
-		task.Above = above
-		task.Below = below
-
-		task.Position = winnerId
+	if len(task.Winners) == task.NumWinners {
 		task.Status = "complete"
 	} else {
 		task.Status = "cannot_decide_winner"
@@ -316,25 +334,6 @@ func main() {
 
 	solv := solver.GetInstance()
 	solv.Run()
-	//repo := repository.GetRepositoryInstance()
-	//for {
-	//	ac := repo.GetOldestUsedRetries(5, 2 * time.Second)
-	//	cl := api.NewApiClientWithAccount(ac)
-	//	o := data.Owner{"4119227113", "ozcan198865"}
-	//	id := "25025320"
-	//	i, err := cl.IsFollower(&o, id)
-	//	switch err.(type) {
-	//	case errors.LoginRequired:
-	//		solver.GetRunningInstance().Enqueue(commands.MakeNewReLoginCommand(ac))
-	//	}
-	//	if i {
-	//		fmt.Printf("%s do follows %s", o.Username, id)
-	//	} else {
-	//		fmt.Printf("%s do not follows %s", o.Username, id)
-	//	}
-	//}
-	//
-	//return
 	app := gin.Default()
 	api := app.Group("/api")
 	{
