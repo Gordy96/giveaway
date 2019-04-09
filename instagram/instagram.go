@@ -1,5 +1,10 @@
 package instagram
 
+import (
+	"strconv"
+	"strings"
+)
+
 type ConstantSet struct {
 	Experiments        string
 	Configs            string
@@ -22,3 +27,36 @@ var Constants = map[string]ConstantSet{
 
 var Version = "83.0.0.20.111"
 var AppHost = "https://i.instagram.com"
+
+const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+func IdToCode(id int64) string {
+	binstr := strconv.FormatInt(id, 2)
+	padAmount := 6 - (len(binstr) % 6)
+	if padAmount != 6 || len(binstr) == 0 {
+		binstr = strings.Repeat("0", padAmount) + binstr
+	}
+	sixtets := len(binstr) / 6
+	var res = make([]uint8, sixtets)
+	for i := 0; i < sixtets; i++ {
+		pos := i * 6
+		chunk := binstr[pos : pos+6]
+		dec, _ := strconv.ParseInt(chunk, 2, 64)
+		res[i] = b64[dec]
+	}
+	return string(res)
+}
+
+func CodeToId(code string) int64 {
+	var binaryFull string
+	for _, r := range code {
+		binstr := strconv.FormatInt(int64(strings.IndexByte(b64, byte(r))), 2)
+		padAmount := 6 - (len(binstr) % 6)
+		if padAmount != 6 || len(binstr) == 0 {
+			binstr = strings.Repeat("0", padAmount) + binstr
+		}
+		binaryFull = binaryFull + binstr
+	}
+	r, _ := strconv.ParseInt(binaryFull, 2, 64)
+	return r
+}

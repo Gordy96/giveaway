@@ -372,7 +372,7 @@ func (c *Client) GetTagPosts(tag string, cursor string) (*structures.HashTagResp
 
 	bts, _ := ioutil.ReadAll(resp.Body)
 	d := &structures.HashTagResponse{}
-	err = json.Unmarshal(bts, &d)
+	err = json.Unmarshal(bts, d)
 	if err != nil {
 		return nil, err, ""
 	}
@@ -434,7 +434,7 @@ func (c *Client) GetShortCodeMediaLikers(shortcode string, cursor string) (*stru
 
 	bts, _ := ioutil.ReadAll(resp.Body)
 	d := &structures.ShortCodeMediaLikersResponse{}
-	err = json.Unmarshal(bts, &d)
+	err = json.Unmarshal(bts, d)
 	if err != nil {
 		return nil, err, ""
 	}

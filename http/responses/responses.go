@@ -1,6 +1,8 @@
 package responses
 
-import "giveaway/data"
+import (
+	"giveaway/data/tasks"
+)
 
 type HasStatusJsonResponse struct {
 	Status bool `json:"status" bson:"status"`
@@ -32,10 +34,10 @@ func NewValidationErrorJsonResponse() ValidationErrorJsonResponse {
 
 type SuccessfulCommentsTaskJsonResponse struct {
 	HasStatusJsonResponse `json:",inline"`
-	Result                data.CommentsTask `json:"result"`
+	Result                tasks.CommentsTask `json:"result"`
 }
 
-func NewSuccessfulCommentsTaskJsonResponse(task data.CommentsTask) SuccessfulCommentsTaskJsonResponse {
+func NewSuccessfulCommentsTaskJsonResponse(task tasks.CommentsTask) SuccessfulCommentsTaskJsonResponse {
 	r := SuccessfulCommentsTaskJsonResponse{}
 	r.Status = true
 	r.Result = task
@@ -44,11 +46,23 @@ func NewSuccessfulCommentsTaskJsonResponse(task data.CommentsTask) SuccessfulCom
 
 type SuccessfulHashTagTaskJsonResponse struct {
 	HasStatusJsonResponse `json:",inline"`
-	Result                data.HashTagTask `json:"result"`
+	Result                tasks.HashTagTask `json:"result"`
 }
 
-func NewSuccessfulHashTagTaskJsonResponse(task data.HashTagTask) SuccessfulHashTagTaskJsonResponse {
+func NewSuccessfulHashTagTaskJsonResponse(task tasks.HashTagTask) SuccessfulHashTagTaskJsonResponse {
 	r := SuccessfulHashTagTaskJsonResponse{}
+	r.Status = true
+	r.Result = task
+	return r
+}
+
+type SuccessfulHashTagStoryTaskJsonResponse struct {
+	HasStatusJsonResponse `json:",inline"`
+	Result                tasks.StoriesTask `json:"result"`
+}
+
+func NewSuccessfulHashTagStoryTaskJsonResponse(task tasks.StoriesTask) SuccessfulHashTagStoryTaskJsonResponse {
+	r := SuccessfulHashTagStoryTaskJsonResponse{}
 	r.Status = true
 	r.Result = task
 	return r

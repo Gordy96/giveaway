@@ -12,17 +12,24 @@ import (
 
 type Repository struct {
 	col *mongo.Collection
+	mux sync.Mutex
 }
 
 func (r *Repository) FindById(id string) *account.Account {
-	a := &account.Account{}
-	r.col.FindOne(nil, bson.M{"_id": id}).Decode(a)
+	var a = &account.Account{}
+	err := r.col.FindOne(nil, bson.M{"_id": id}).Decode(a)
+	if err != nil || a.Id != id {
+		return nil
+	}
 	return a
 }
 
 func (r *Repository) FindByUsername(username string) *account.Account {
-	a := &account.Account{}
-	r.col.FindOne(nil, bson.M{"username": username}).Decode(a)
+	var a = &account.Account{}
+	err := r.col.FindOne(nil, bson.M{"username": username}).Decode(a)
+	if err != nil || a.Username != username {
+		return nil
+	}
 	return a
 }
 
@@ -31,6 +38,11 @@ func (r *Repository) Save(acc *account.Account) error {
 	opts.SetUpsert(true)
 	_, err := r.col.UpdateOne(nil, bson.M{"username": acc.Username}, bson.M{"$set": acc}, &opts)
 	return err
+}
+
+func (r *Repository) Release(acc *account.Account) error {
+	acc.Status = account.Available
+	return r.Save(acc)
 }
 
 func (r *Repository) GetRandom() *account.Account {
@@ -45,10 +57,9 @@ func (r *Repository) GetRandom() *account.Account {
 }
 
 func (r *Repository) GetOldestUsedRetries(retries int, timeout time.Duration) *account.Account {
+	r.mux.Lock()
 	var ac *account.Account = nil
-	mux := sync.Mutex{}
-	mux.Lock()
-	defer mux.Unlock()
+	defer r.mux.Unlock()
 	filter := bson.M{
 		"status": bson.M{
 			"$nin": []account.AccountStatus{
@@ -113,10 +124,10 @@ func (r *Repository) getOldest() *account.Account {
 }
 
 func (r *Repository) GetOldestUsed() *account.Account {
-	mux := sync.Mutex{}
-	mux.Lock()
-	defer mux.Unlock()
-	return r.getOldest()
+	r.mux.Lock()
+	ac := r.getOldest()
+	r.mux.Unlock()
+	return ac
 }
 
 var defaultRepo *Repository = nil
@@ -128,12 +139,13 @@ func NewRepository(table string) *Repository {
 	return r
 }
 
+var accountsSingletonMux = sync.Mutex{}
+
 func GetRepositoryInstance() *Repository {
-	mux := sync.Mutex{}
-	mux.Lock()
+	accountsSingletonMux.Lock()
 	if defaultRepo == nil {
 		defaultRepo = NewRepository("Accounts")
 	}
-	mux.Unlock()
+	accountsSingletonMux.Unlock()
 	return defaultRepo
 }

@@ -18,12 +18,12 @@ type ILogger interface {
 	Fatalf(string, ...interface{})
 }
 
-type LoggerOptions struct {
-	DateFormat *string
+type Options struct {
+	DateFormat string
 }
 
 type FileLogger struct {
-	opts    LoggerOptions
+	opts    Options
 	mux     sync.Mutex
 	info    *os.File
 	warning *os.File
@@ -34,8 +34,8 @@ type FileLogger struct {
 func (l *FileLogger) output(dst *os.File, s string) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
-	if l.opts.DateFormat != nil {
-		dst.Write([]byte(fmt.Sprintf("[%s] %s\n", time.Now().Format(*l.opts.DateFormat), s)))
+	if l.opts.DateFormat != "" {
+		dst.Write([]byte(fmt.Sprintf("[%s] %s\n", time.Now().Format(l.opts.DateFormat), s)))
 	} else {
 		dst.Write([]byte(fmt.Sprintf("%s\n", s)))
 	}
@@ -67,21 +67,16 @@ func (l *FileLogger) Fatalf(f string, args ...interface{}) {
 	os.Exit(2)
 }
 
-func mergeOptions(opts ...LoggerOptions) LoggerOptions {
-	res := LoggerOptions{}
+func mergeOptions(opts ...Options) Options {
+	res := Options{}
 	for _, o := range opts {
 		res.DateFormat = o.DateFormat
 	}
 	return res
 }
 
-func NewFileLogger(o ...LoggerOptions) ILogger {
-	file, err := os.OpenFile(fmt.Sprintf("log_%s.txt", time.Now().Format("20060102")), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		panic(err)
-	}
+func NewFileLogger(file *os.File, o ...Options) ILogger {
 	l := &FileLogger{}
-	l.mux = sync.Mutex{}
 	l.info = file
 	l.error = file
 	l.warning = file
@@ -91,8 +86,24 @@ func NewFileLogger(o ...LoggerOptions) ILogger {
 }
 
 var defaultTimeFormat = "2006-01-02 15:04:05 -07:00"
-var defaultLogger = NewFileLogger(LoggerOptions{&defaultTimeFormat})
+var defaultLogger ILogger = nil
+
+func makeDefaultFileLogger() ILogger {
+
+	file, err := os.OpenFile(fmt.Sprintf("log_%s.txt", time.Now().Format("20060102")), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+	return NewFileLogger(file, Options{defaultTimeFormat})
+}
+
+var loggerSingletonMux = sync.Mutex{}
 
 func DefaultLogger() ILogger {
+	loggerSingletonMux.Lock()
+	if defaultLogger == nil {
+		defaultLogger = makeDefaultFileLogger()
+	}
+	loggerSingletonMux.Unlock()
 	return defaultLogger
 }

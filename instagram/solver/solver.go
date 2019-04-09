@@ -8,6 +8,7 @@ import (
 type Solver struct {
 	ch      chan commands.Command
 	started bool
+	mux     sync.Mutex
 }
 
 func (s *Solver) Enqueue(command commands.Command) chan interface{} {
@@ -18,9 +19,8 @@ func (s *Solver) Enqueue(command commands.Command) chan interface{} {
 }
 
 func (s *Solver) Run() {
-	mux := sync.Mutex{}
-	mux.Lock()
-	defer mux.Unlock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	if s.started {
 		return
 	}
@@ -37,9 +37,8 @@ func (s *Solver) Run() {
 }
 
 func (s *Solver) Close() {
-	mux := sync.Mutex{}
-	mux.Lock()
-	defer mux.Unlock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	close(s.ch)
 	s.ch = make(chan commands.Command)
 	s.started = false
@@ -53,13 +52,14 @@ func New() *Solver {
 	return temp
 }
 
+var solverSingletonMux = sync.Mutex{}
+
 func GetInstance() *Solver {
-	mux := sync.Mutex{}
-	mux.Lock()
+	solverSingletonMux.Lock()
 	if singleToneSolverInstance == nil {
 		singleToneSolverInstance = New()
 	}
-	mux.Unlock()
+	solverSingletonMux.Unlock()
 	return singleToneSolverInstance
 }
 

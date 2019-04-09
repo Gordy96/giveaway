@@ -14,11 +14,18 @@ func (e HttpTooManyRequests) Error() string {
 	return "too many requests"
 }
 
-type ShouldStopIterationError struct {
+type BeforeMinimumDate struct {
 }
 
-func (e ShouldStopIterationError) Error() string {
-	return "should break loop"
+func (e BeforeMinimumDate) Error() string {
+	return "examined date is before allowed"
+}
+
+type AfterMaximumDate struct {
+}
+
+func (e AfterMaximumDate) Error() string {
+	return "examined date is after allowed"
 }
 
 type UnknownRuleError struct {

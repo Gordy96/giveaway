@@ -66,10 +66,11 @@ func Connect(opts ...*ConnectionOptions) *mongo.Client {
 	return cl
 }
 
+var mongoSingletonMux = sync.Mutex{}
+
 func Instance(opts ...*ConnectionOptions) *mongo.Client {
-	mux := sync.Mutex{}
-	mux.Lock()
-	defer mux.Unlock()
+	mongoSingletonMux.Lock()
+	defer mongoSingletonMux.Unlock()
 	if !compareOptions(opts...) {
 		if cl != nil {
 			cl.Disconnect(nil)

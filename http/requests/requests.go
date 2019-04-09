@@ -1,13 +1,15 @@
 package requests
 
-import "giveaway/client/validation"
+import (
+	"giveaway/client/validation"
+)
 
 type HasRulesJsonRequest struct {
 	Rules validation.RuleCollection `json:"rules"`
 }
 
 type HasWinnerCount struct {
-	Winners int64 `json:"winners"`
+	NumWinners int `json:"num_winners"`
 }
 
 type CommentTaskJsonRequest struct {
@@ -17,6 +19,12 @@ type CommentTaskJsonRequest struct {
 }
 
 type HashTagTaskJsonRequest struct {
+	HasRulesJsonRequest `json:",inline" bson:",inline"`
+	HasWinnerCount      `json:",inline" bson:",inline"`
+	HashTag             string `json:"hashtag" bson:"hashtag"`
+}
+
+type HashTagStoryTaskJsonRequest struct {
 	HasRulesJsonRequest `json:",inline" bson:",inline"`
 	HasWinnerCount      `json:",inline" bson:",inline"`
 	HashTag             string `json:"hashtag" bson:"hashtag"`

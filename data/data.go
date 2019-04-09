@@ -1,9 +1,6 @@
 package data
 
-import (
-	"giveaway/client/validation"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
+import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Owner struct {
 	Id       string `json:"id" bson:"id"`
@@ -44,11 +41,11 @@ type TagMedia struct {
 	ShortCode    string `json:"shortcode" bson:"shortcode"`
 	LikeCount    int32  `json:"like_count" bson:"like_count"`
 	CommentCount int32  `json:"comment_count" bson:"comment_count"`
-	TakenAt      int32  `json:"taken_at" bson:"taken_at"`
+	TakenAt      int64  `json:"taken_at" bson:"taken_at"`
 	Owner        Owner  `json:"owner" bson:"owner"`
 }
 
-func (t *TagMedia) GetCreationDate() int32 {
+func (t *TagMedia) GetCreationDate() int64 {
 	return t.TakenAt
 }
 
@@ -60,18 +57,12 @@ func (t *TagMedia) GetKey() interface{} {
 	return t.Owner.Id
 }
 
-type BaseTaskModel struct {
-	Id         primitive.ObjectID        `json:"_id,omitempty" bson:"_id"`
-	CreatedAt  int64                     `json:"created_at" bson:"created_at"`
-	FinishedAt int64                     `json:"finished_at" bson:"finished_at"`
-	Status     string                    `json:"status" bson:"status"`
-	Comment    string                    `json:"comment" bson:"comment"`
-	Rules      validation.RuleCollection `json:"rules" bson:"rules"`
-	NumWinners int                       `json:"num_winners"`
-}
-
-type HasKey interface {
-	GetKey() interface{}
+type StorySource struct {
+	Id        primitive.ObjectID `json:"_id,omitempty" bson:"_id"`
+	CreatedAt int64              `json:"created_at" bson:"created_at"`
+	TaskId    primitive.ObjectID `json:"task_id,omitempty" bson:"task_id"`
+	StoryId   int64              `json:"story_id" bson:"story_id"`
+	Data      []byte             `json:"data" bson:"data"`
 }
 
 type CommentWinner struct {
@@ -79,24 +70,4 @@ type CommentWinner struct {
 	Above    []*Comment `json:"above" bson:"above"`
 	Below    []*Comment `json:"below" bson:"below"`
 	Position int        `json:"position" bson:"position"`
-}
-
-type CommentsTask struct {
-	BaseTaskModel `json:",inline" bson:",inline"`
-	ShortCode     string          `json:"shortcode" bson:"shortcode"`
-	Winners       []CommentWinner `json:"winner" bson:"winner"`
-}
-
-func (c *CommentsTask) GetKey() interface{} {
-	return c.Id
-}
-
-type HashTagTask struct {
-	BaseTaskModel `json:",inline" bson:",inline"`
-	HashTag       string      `json:"hashtag" bson:"hashtag"`
-	Winners       []*TagMedia `json:"winners" bson:"winners"`
-}
-
-func (c *HashTagTask) GetKey() interface{} {
-	return c.Id
 }

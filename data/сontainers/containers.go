@@ -2,10 +2,13 @@ package сontainers
 
 import (
 	"fmt"
-	"giveaway/data"
 	"math/rand"
 	"time"
 )
+
+type HasKey interface {
+	GetKey() interface{}
+}
 
 type Entry struct {
 	Key   string
@@ -15,7 +18,7 @@ type Entry struct {
 type EntryContainer struct {
 	data  []Entry
 	dupes map[string][]int
-	add   func(data.HasKey)
+	add   func(HasKey)
 }
 
 func (t *EntryContainer) Get(i int) *Entry {
@@ -40,7 +43,7 @@ func (t *EntryContainer) GetRandomIndexNoDuplicates() int {
 	return idx
 }
 
-func (t *EntryContainer) Add(value data.HasKey) {
+func (t *EntryContainer) Add(value HasKey) {
 	t.add(value)
 }
 
@@ -56,7 +59,7 @@ func NewEntryContainer() *EntryContainer {
 	c := &EntryContainer{}
 	c.dupes = map[string][]int{}
 	c.data = make([]Entry, 0)
-	c.add = func(ins data.HasKey) {
+	c.add = func(ins HasKey) {
 		idx := len(c.data)
 
 		entry := Entry{ins.GetKey().(string), ins}

@@ -8,10 +8,12 @@ import (
 	"giveaway/client/web"
 	"giveaway/data/errors"
 	"giveaway/data/сontainers"
+	"giveaway/instagram"
 	"giveaway/instagram/account"
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/commands"
 	"giveaway/instagram/solver"
+	"giveaway/instagram/structures"
 	"giveaway/utils/bson"
 	"time"
 )
@@ -35,12 +37,16 @@ func (d DateRule) UnmarshalBSON(data []byte) error {
 }
 
 func (d DateRule) Validate(i interface{}) (bool, error) {
-	examined := i.(client.HasDateAttribute).GetCreationDate()
+	e, is := i.(client.HasDateAttribute)
+	if !is {
+		return false, errors.ValidationCriticalFailure{}
+	}
+	examined := e.GetCreationDate()
 	if d.Limits[1] > 0 && examined > d.Limits[1] {
-		return false, nil
+		return false, errors.AfterMaximumDate{}
 	}
 	if examined < d.Limits[0] {
-		return false, errors.ShouldStopIterationError{}
+		return false, errors.BeforeMinimumDate{}
 	}
 	return true, nil
 }
@@ -64,12 +70,16 @@ func (f FollowsRule) UnmarshalBSON(data []byte) error {
 }
 
 func (f FollowsRule) Validate(i interface{}) (bool, error) {
-	owner := i.(client.HasOwner).GetOwner()
-	repo := repository.GetRepositoryInstance()
-	cl := api.NewApiClient()
-
 	var is bool
 	var err error = nil
+	var hasOwner client.HasOwner
+	hasOwner, is = i.(client.HasOwner)
+	if !is {
+		return false, errors.ValidationCriticalFailure{}
+	}
+	owner := hasOwner.GetOwner()
+	repo := repository.GetRepositoryInstance()
+	cl := api.NewApiClient()
 
 	for {
 		acc := repo.GetOldestUsedRetries(15, 2*time.Second)
@@ -87,7 +97,6 @@ func (f FollowsRule) Validate(i interface{}) (bool, error) {
 		case errors.LoginRequired:
 			solver.GetRunningInstance().Enqueue(commands.MakeNewReLoginCommand(acc))
 		}
-
 	}
 	return is, err
 }
@@ -131,7 +140,10 @@ func (f FollowersRule) String() string {
 }
 
 func (f FollowersRule) Validate(i interface{}) (bool, error) {
-	cl := i.(*web.Client)
+	cl, is := i.(*web.Client)
+	if !is {
+		return false, errors.ValidationCriticalFailure{}
+	}
 	u, err := cl.GetUserInfo(f.Username)
 	if err != nil {
 		return false, err
@@ -222,4 +234,143 @@ func (p ParticipantsRule) Validate(i interface{}) (bool, error) {
 		return false, fmt.Errorf("wrong argumane type (%v)", i)
 	}
 	return checkCondition(p.Condition, int64(col.LengthNoDuplicates()), p.Amount), nil
+}
+
+type StoryHasHashTagRule struct {
+	Name    string `json:"name" bson:"name"`
+	HashTag string `json:"hashtag" bson:"hashtag"`
+}
+
+func (s StoryHasHashTagRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(s)
+}
+
+func (s StoryHasHashTagRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &s)
+}
+
+func (s StoryHasHashTagRule) String() string {
+	bts, _ := json.Marshal(s)
+	return string(bts)
+}
+
+func (s StoryHasHashTagRule) Validate(i interface{}) (bool, error) {
+	story, ok := i.(*structures.StoryItem)
+	if !ok {
+		return false, fmt.Errorf("wrong argumane type (%v)", i)
+	}
+
+	for _, tag := range story.StoryHashtags {
+		if tag.Hashtag.Name == s.HashTag {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+type StoryHasMentionRule struct {
+	Name     string `json:"name" bson:"name"`
+	Username string `json:"username, omitempty" bson:"username, omitempty"`
+	ID       string `json:"id, omitempty" bson:"id, omitempty"`
+}
+
+func (s StoryHasMentionRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(s)
+}
+
+func (s StoryHasMentionRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &s)
+}
+
+func (s StoryHasMentionRule) String() string {
+	bts, _ := json.Marshal(s)
+	return string(bts)
+}
+
+func (s StoryHasMentionRule) Validate(i interface{}) (bool, error) {
+	story, ok := i.(*structures.StoryItem)
+	if !ok {
+		return false, fmt.Errorf("wrong argumane type (%v)", i)
+	}
+
+	for _, mention := range story.ReelMentions {
+		if s.Username != "" {
+			if mention.User.Username == s.Username {
+				return true, nil
+			}
+		} else if s.ID != "" {
+			if string(mention.User.Pk) == s.ID {
+				return true, nil
+			}
+		} else {
+			return false, nil
+		}
+	}
+	return false, nil
+}
+
+type StoryHasPostRule struct {
+	Name      string `json:"name" bson:"name"`
+	ShortCode string `json:"shortcode, omitempty" bson:"shortcode, omitempty"`
+}
+
+func (s StoryHasPostRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(s)
+}
+
+func (s StoryHasPostRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &s)
+}
+
+func (s StoryHasPostRule) String() string {
+	bts, _ := json.Marshal(s)
+	return string(bts)
+}
+
+func (s StoryHasPostRule) Validate(i interface{}) (bool, error) {
+	story, ok := i.(*structures.StoryItem)
+	if !ok {
+		return false, fmt.Errorf("wrong argumane type (%v)", i)
+	}
+
+	for _, media := range story.StoryFeedMedia {
+		if instagram.IdToCode(media.MediaID) == s.ShortCode {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+type StoryHasExternalLinkRule struct {
+	Name string `json:"name" bson:"name"`
+	Link string `json:"link, omitempty" bson:"link, omitempty"`
+}
+
+func (s StoryHasExternalLinkRule) MarshalBSON() ([]byte, error) {
+	return bson.StructToBSON(s)
+}
+
+func (s StoryHasExternalLinkRule) UnmarshalBSON(data []byte) error {
+	return bson.BSONToStruct(data, &s)
+}
+
+func (s StoryHasExternalLinkRule) String() string {
+	bts, _ := json.Marshal(s)
+	return string(bts)
+}
+
+func (s StoryHasExternalLinkRule) Validate(i interface{}) (bool, error) {
+	story, ok := i.(*structures.StoryItem)
+	if !ok {
+		return false, fmt.Errorf("wrong argumane type (%v)", i)
+	}
+
+	for _, cta := range story.StoryCta {
+		for _, link := range cta.Links {
+			if link.WebURI == s.Link {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

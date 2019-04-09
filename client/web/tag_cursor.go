@@ -43,7 +43,7 @@ func (c *TagMediaCursor) run(errChan chan error, resChan chan data.TagMedia) {
 				ShortCode:    e.Node.ShortCode,
 				LikeCount:    int32(e.Node.EdgeLikedBy.Count),
 				CommentCount: int32(e.Node.EdgeMediaToComment.Count),
-				TakenAt:      int32(e.Node.TakenAtTimestamp),
+				TakenAt:      e.Node.TakenAtTimestamp,
 				Owner: data.Owner{
 					Id:       e.Node.Owner.ID,
 					Username: "",

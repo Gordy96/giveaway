@@ -12,6 +12,7 @@ import (
 	"giveaway/data/errors"
 	"giveaway/instagram"
 	"giveaway/instagram/account"
+	"giveaway/instagram/structures"
 	"giveaway/utils"
 	"hash"
 	"io"
@@ -99,7 +100,21 @@ func (c *Client) procResp(resp *http.Response) (map[string]interface{}, error) {
 	return temp, err
 }
 
-func (c *Client) GetUserInfo(id string) (*data.Owner, error) {
+func handleResponseErrors(response *http.Response) error {
+	if response.StatusCode != 200 {
+		switch response.StatusCode {
+		case 403:
+			return errors.HttpForbidden{}
+		case 429:
+			return errors.HttpTooManyRequests{}
+		default:
+			return fmt.Errorf("%d %s", response.StatusCode, response.Status)
+		}
+	}
+	return nil
+}
+
+func (c *Client) GetUserInfo(id string) (*data.User, error) {
 	uri := fmt.Sprintf("%s/api/v1/users/%s/info", instagram.AppHost, id)
 	req := c.newRequest(
 		"GET",
@@ -112,12 +127,24 @@ func (c *Client) GetUserInfo(id string) (*data.Owner, error) {
 		return nil, err
 	}
 
+	if err = handleResponseErrors(resp); err != nil {
+		return nil, err
+	}
+
 	dat, err := c.procResp(resp)
 
 	if user, ok := dat["user"]; ok {
-		u, ok := user.(map[string]interface{})
+		usr, ok := user.(map[string]interface{})
 		if ok {
-			return &data.Owner{Id: strconv.FormatInt(int64(u["pk"].(float64)), 10), Username: u["username"].(string)}, nil
+			u := &data.User{}
+			u.Username = usr["username"].(string)
+			u.Id = strconv.FormatInt(int64(usr["pk"].(float64)), 10)
+			u.Follows = int64(usr["following_count"].(float64))
+			u.Followers = int64(usr["follower_count"].(float64))
+			u.IsBusiness = usr["is_business"].(bool)
+			u.IsPrivate = usr["is_private"].(bool)
+			u.IsVerified = usr["is_verified"].(bool)
+			return u, nil
 		}
 	}
 
@@ -149,6 +176,10 @@ func (c *Client) IsFollower(o *data.Owner, id string) (bool, error) {
 
 	resp, err := c.http.Do(req)
 	if err != nil {
+		return false, err
+	}
+
+	if err = handleResponseErrors(resp); err != nil {
 		return false, err
 	}
 
@@ -242,6 +273,9 @@ func (c *Client) setCookieJar(jar http.CookieJar) {
 }
 
 func (c *Client) Login() (bool, error) {
+	if c.acc == nil {
+		return false, fmt.Errorf("account is nil")
+	}
 	c.acc.ResetCookies()
 	c.setCookieJar(c.acc.MakeCookieJar())
 
@@ -249,15 +283,15 @@ func (c *Client) Login() (bool, error) {
 	c.LauncherSync()
 
 	jsonBody := map[string]interface{}{
-		"country_codes":       "[{\"country_code\":\"1\",\"source\":[\"me_profile\"]},{\"country_code\":\"1\",\"source\":[\"default\"]}]",
+		"country_codes":       "[{\"country_code\":\"380\",\"source\":[\"me_profile\"]},{\"country_code\":\"44\",\"source\":[\"default\"]}]",
 		"phone_id":            c.acc.PhoneId,
 		"username":            c.acc.Username,
 		"adid":                c.acc.AdId,
 		"guid":                c.acc.GUID,
 		"device_id":           c.acc.DeviceId,
-		"google_tokens":       "",
+		"google_tokens":       "[]",
 		"password":            c.acc.Password,
-		"login_attempt_count": "1",
+		"login_attempt_count": "0",
 	}
 
 	uri, _ := url.Parse(instagram.AppHost + "/api/v1/accounts/login/")
@@ -293,6 +327,105 @@ func (c *Client) Login() (bool, error) {
 	}
 
 	return false, err
+}
+
+func (c *Client) QueryHashTagStories(tag string, cb func(item structures.StoryItem) (bool, error)) (*structures.Story, error) {
+	var story *structures.Story = nil
+	r, err := c.GetUnseenHashTagStories(tag)
+	if err != nil {
+		return story, err
+	}
+	story = r.Story
+	if story != nil {
+		for _, i := range story.Items {
+			if f, err := cb(i); !f {
+				return story, err
+			}
+		}
+	}
+	return story, nil
+}
+
+func (c *Client) GetUnseenHashTagStories(hashTag string) (*structures.HashTagStoriesResponse, error) {
+	var err error = nil
+	uri := fmt.Sprintf("%s/api/v1/tags/%s/story/", instagram.AppHost, hashTag)
+	req := c.newRequest(
+		"GET",
+		uri,
+		nil,
+	)
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = handleResponseErrors(resp); err != nil {
+		return nil, err
+	}
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var dat = &structures.HashTagStoriesResponse{}
+	err = json.Unmarshal(respBytes, dat)
+	if err != nil {
+		return nil, err
+	}
+	return dat, nil
+}
+
+func (c *Client) MarkHashTagStoriesAsSeen(belongs *structures.Story, stories ...structures.WatchedStoryEntry) (bool, error) {
+	var err error = nil
+	uri, err := url.Parse(fmt.Sprintf("%s/api/v2/media/seen/?reel=1&live_vod=0", instagram.AppHost))
+	if err != nil {
+		return false, err
+	}
+
+	jsonBody := map[string]interface{}{
+		"_uid":               c.acc.Id,
+		"_uuid":              c.acc.GUID,
+		"container_module":   "hashtag_feed",
+		"live_vods_skipped":  map[string]interface{}{},
+		"nuxes_skipped":      map[string]interface{}{},
+		"nuxes":              map[string]interface{}{},
+		"reels":              structures.MakeWatchedStoryRequest(belongs, stories...),
+		"reel_media_skipped": map[string]interface{}{},
+	}
+
+	csrf := c.findCSRF(uri)
+
+	if csrf != "" {
+		jsonBody["_csrftoken"] = csrf
+	}
+
+	req := c.newRequest(
+		"POST",
+		uri.String(),
+		bytes.NewReader([]byte(c.makeRequestString(jsonBody))),
+	)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return false, err
+	}
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	var dat = map[string]interface{}{}
+	err = json.Unmarshal(respBytes, &dat)
+	if err != nil {
+		return false, err
+	}
+	if status, ok := dat["status"]; ok && status.(string) == "ok" {
+		return true, nil
+	}
+	return false, nil
 }
 
 func makeProxy(proxy string) *http.Transport {
