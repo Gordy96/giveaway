@@ -8,6 +8,7 @@ import (
 	"giveaway/data"
 	"giveaway/data/errors"
 	"giveaway/data/сontainers"
+	"giveaway/http/proxies"
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/structures"
 	"giveaway/instagram/structures/stories"
@@ -154,7 +155,7 @@ func (c *CommentsTask) GetKey() interface{} {
 }
 
 func (c *CommentsTask) FetchData() {
-	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
+	cl := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
 	cl.Init()
 
 	repo := dbRepo.GetNamedRepositoryInstance("CommentTasks")
@@ -315,7 +316,7 @@ func (h *HashTagTask) GetKey() interface{} {
 }
 
 func (h *HashTagTask) FetchData() {
-	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://localhost:8888")
+	cl := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
 	cl.Init()
 
 	repo := dbRepo.GetNamedRepositoryInstance("HashTagTasks")
