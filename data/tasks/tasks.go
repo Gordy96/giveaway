@@ -476,8 +476,7 @@ func (s *StoriesTask) FetchData() {
 	cl.Login()
 	repo := dbRepo.GetNamedRepositoryInstance("HashTagStoryTasks")
 	dLogger := logger.DefaultLogger()
-	clw := web.NewWebClient(&utils.UserAgentGenerator{}, acc.Proxy)
-
+	clw := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
 	ruleRes, err = runRules(s.Rules.PreconditionRules, clw, func(rule validation.IRule, e error) (bool, error) {
 		s.Status = Cancelled
 		s.Comment = fmt.Sprintf("failed on precondition rule: %v", rule)
