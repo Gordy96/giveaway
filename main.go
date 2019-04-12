@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"giveaway/client/validation"
 	"giveaway/client/validation/rules"
 	"giveaway/data/tasks"
-	"giveaway/http/proxies"
 	"giveaway/http/requests"
 	"giveaway/http/responses"
 	"giveaway/instagram/account/repository"
@@ -14,18 +12,9 @@ import (
 	repository2 "giveaway/utils/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/x/bsonx"
-	"time"
 )
 
 func main() {
-	pl := proxies.GetGlobalInstance()
-	for i := 0; i < 15; i++ {
-		go func(i int) {
-			fmt.Printf("thread %d: %s\n", i, pl.GetNext())
-		}(i)
-	}
-	time.Sleep(10 * time.Second)
-	return
 	validation.RegisterRuleConstructor(validation.RuleConstructorMap{
 		"DateRule": func(i interface{}) (validation.RuleType, validation.IRule) {
 			tArr := i.(map[string]interface{})["limits"].([]interface{})
