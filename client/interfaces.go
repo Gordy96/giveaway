@@ -1,6 +1,8 @@
 package client
 
-import "giveaway/data"
+import (
+	"giveaway/data/owner"
+)
 
 type SuspendsThread interface {
 	Sleep()
@@ -15,5 +17,12 @@ type HasDateAttribute interface {
 }
 
 type HasOwner interface {
-	GetOwner() *data.Owner
+	GetOwner() *owner.Owner
+}
+
+type ITask interface {
+	FetchData()
+	//StopDataFetching()
+	DropData()
+	DecideWinner()
 }

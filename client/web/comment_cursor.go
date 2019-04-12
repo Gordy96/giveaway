@@ -3,6 +3,7 @@ package web
 import (
 	"giveaway/client"
 	"giveaway/data"
+	"giveaway/data/owner"
 	"giveaway/instagram/structures"
 )
 
@@ -41,7 +42,7 @@ func (c *CommentCursor) run(errChan chan error, resChan chan data.Comment) {
 				Id:        e.Node.ID,
 				Text:      e.Node.Text,
 				CreatedAt: e.Node.CreatedAt,
-				Owner: data.Owner{
+				Owner: owner.Owner{
 					Id:       e.Node.Owner.ID,
 					Username: e.Node.Owner.Username,
 				},

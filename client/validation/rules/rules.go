@@ -13,7 +13,7 @@ import (
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/commands"
 	"giveaway/instagram/solver"
-	"giveaway/instagram/structures"
+	"giveaway/instagram/structures/stories"
 	"giveaway/utils/bson"
 	"time"
 )
@@ -255,7 +255,7 @@ func (s StoryHasHashTagRule) String() string {
 }
 
 func (s StoryHasHashTagRule) Validate(i interface{}) (bool, error) {
-	story, ok := i.(*structures.StoryItem)
+	story, ok := i.(*stories.StoryItem)
 	if !ok {
 		return false, fmt.Errorf("wrong argumane type (%v)", i)
 	}
@@ -288,7 +288,7 @@ func (s StoryHasMentionRule) String() string {
 }
 
 func (s StoryHasMentionRule) Validate(i interface{}) (bool, error) {
-	story, ok := i.(*structures.StoryItem)
+	story, ok := i.(*stories.StoryItem)
 	if !ok {
 		return false, fmt.Errorf("wrong argumane type (%v)", i)
 	}
@@ -328,7 +328,7 @@ func (s StoryHasPostRule) String() string {
 }
 
 func (s StoryHasPostRule) Validate(i interface{}) (bool, error) {
-	story, ok := i.(*structures.StoryItem)
+	story, ok := i.(*stories.StoryItem)
 	if !ok {
 		return false, fmt.Errorf("wrong argumane type (%v)", i)
 	}
@@ -360,7 +360,7 @@ func (s StoryHasExternalLinkRule) String() string {
 }
 
 func (s StoryHasExternalLinkRule) Validate(i interface{}) (bool, error) {
-	story, ok := i.(*structures.StoryItem)
+	story, ok := i.(*stories.StoryItem)
 	if !ok {
 		return false, fmt.Errorf("wrong argumane type (%v)", i)
 	}

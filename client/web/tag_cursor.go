@@ -3,6 +3,7 @@ package web
 import (
 	"giveaway/client"
 	"giveaway/data"
+	"giveaway/data/owner"
 	"giveaway/instagram/structures"
 )
 
@@ -44,7 +45,7 @@ func (c *TagMediaCursor) run(errChan chan error, resChan chan data.TagMedia) {
 				LikeCount:    int32(e.Node.EdgeLikedBy.Count),
 				CommentCount: int32(e.Node.EdgeMediaToComment.Count),
 				TakenAt:      e.Node.TakenAtTimestamp,
-				Owner: data.Owner{
+				Owner: owner.Owner{
 					Id:       e.Node.Owner.ID,
 					Username: "",
 				},

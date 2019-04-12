@@ -10,9 +10,11 @@ import (
 	"github.com/google/uuid"
 	"giveaway/data"
 	"giveaway/data/errors"
+	"giveaway/data/owner"
 	"giveaway/instagram"
 	"giveaway/instagram/account"
 	"giveaway/instagram/structures"
+	"giveaway/instagram/structures/stories"
 	"giveaway/utils"
 	"hash"
 	"io"
@@ -151,7 +153,7 @@ func (c *Client) GetUserInfo(id string) (*data.User, error) {
 	return nil, err
 }
 
-func (c *Client) IsFollower(o *data.Owner, id string) (bool, error) {
+func (c *Client) IsFollower(o *owner.Owner, id string) (bool, error) {
 	uri := fmt.Sprintf("%s/api/v1/friendships/%s/followers/", instagram.AppHost, id)
 	req := c.newRequest(
 		"GET",
@@ -329,7 +331,7 @@ func (c *Client) Login() (bool, error) {
 	return false, err
 }
 
-func (c *Client) QueryHashTagStories(tag string, cb func(item structures.StoryItem) (bool, error)) (*structures.Story, error) {
+func (c *Client) QueryHashTagStories(tag string, cb func(item stories.StoryItem) (bool, error)) (*structures.Story, error) {
 	var story *structures.Story = nil
 	r, err := c.GetUnseenHashTagStories(tag)
 	if err != nil {
