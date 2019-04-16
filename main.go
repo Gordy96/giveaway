@@ -4,11 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"giveaway/client/validation"
 	"giveaway/client/validation/rules"
+	"giveaway/client/web"
 	"giveaway/data/tasks"
+	"giveaway/http/proxies"
 	"giveaway/http/requests"
 	"giveaway/http/responses"
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/solver"
+	"giveaway/utils"
 	repository2 "giveaway/utils/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/x/bsonx"
@@ -102,6 +105,29 @@ func main() {
 	{
 		v1 := api.Group("/v1")
 		{
+			util := v1.Group("/util/info")
+			{
+				util.GET("/post/:code", func(c *gin.Context) {
+					code := c.Param("code")
+					cl := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
+					r, err := cl.GetPostSummary(code)
+					if err != nil {
+						c.JSON(404, responses.NewNotFoundJsonResponse())
+						return
+					}
+					c.JSON(200, responses.NewSuccessfulPostInfoResponse(*r))
+				})
+				util.GET("/tag/:tag", func(c *gin.Context) {
+					tag := c.Param("tag")
+					cl := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
+					r, err := cl.GetHashTagSummary(tag)
+					if err != nil {
+						c.JSON(404, responses.NewNotFoundJsonResponse())
+						return
+					}
+					c.JSON(200, responses.NewSuccessfulTagInfoResponse(*r))
+				})
+			}
 			tasksGroup := v1.Group("/tasks")
 			{
 				comments := tasksGroup.Group("/comments")

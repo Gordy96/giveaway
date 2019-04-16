@@ -2,6 +2,7 @@ package responses
 
 import (
 	"giveaway/data/tasks"
+	"giveaway/instagram/structures"
 )
 
 type HasStatusJsonResponse struct {
@@ -65,5 +66,29 @@ func NewSuccessfulHashTagStoryTaskJsonResponse(task tasks.StoriesTask) Successfu
 	r := SuccessfulHashTagStoryTaskJsonResponse{}
 	r.Status = true
 	r.Result = task
+	return r
+}
+
+type SuccessfulPostInfoResponse struct {
+	HasStatusJsonResponse `json:",inline"`
+	Result                structures.PostSummary `json:"result"`
+}
+
+func NewSuccessfulPostInfoResponse(res structures.PostSummary) SuccessfulPostInfoResponse {
+	r := SuccessfulPostInfoResponse{}
+	r.Status = true
+	r.Result = res
+	return r
+}
+
+type SuccessfulTagInfoResponse struct {
+	HasStatusJsonResponse `json:",inline"`
+	Result                structures.HashTagSummary `json:"result"`
+}
+
+func NewSuccessfulTagInfoResponse(res structures.HashTagSummary) SuccessfulTagInfoResponse {
+	r := SuccessfulTagInfoResponse{}
+	r.Status = true
+	r.Result = res
 	return r
 }
