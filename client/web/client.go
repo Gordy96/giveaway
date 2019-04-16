@@ -202,8 +202,9 @@ func (c *Client) QueryComments(code string, cb func(data.Comment) (bool, error))
 					Text:      e.Node.Text,
 					CreatedAt: e.Node.CreatedAt,
 					Owner: owner.Owner{
-						Id:       e.Node.Owner.ID,
-						Username: e.Node.Owner.Username,
+						Id:            e.Node.Owner.ID,
+						Username:      e.Node.Owner.Username,
+						ProfilePicUrl: e.Node.Owner.ProfilePicURL,
 					},
 				}
 				if r, err := cb(comment); !r {

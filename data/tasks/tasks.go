@@ -136,6 +136,7 @@ func filterWinnerHashTagStories(ret *сontainers.EntryContainer, rules []validat
 
 type BaseTaskModel struct {
 	Id         primitive.ObjectID        `json:"_id,omitempty" bson:"_id"`
+	SourceUrl  string                    `json:"source_url" bson:"source_url"`
 	CreatedAt  int64                     `json:"created_at" bson:"created_at"`
 	FinishedAt int64                     `json:"finished_at" bson:"finished_at"`
 	Status     TaskStatus                `json:"status" bson:"status"`
@@ -156,6 +157,7 @@ func (c *CommentsTask) GetKey() interface{} {
 
 func (c *CommentsTask) FetchData() {
 	cl := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
+
 	cl.Init()
 
 	repo := dbRepo.GetNamedRepositoryInstance("CommentTasks")
@@ -171,6 +173,14 @@ func (c *CommentsTask) FetchData() {
 		}
 		return false, nil
 	})
+	if err != nil {
+		dLogger.Errorf("error: %v", err)
+		c.Status = Failed
+		c.Comment = fmt.Sprintf("got error: %v", err)
+		err = repo.Save(c)
+	}
+	summary, err := cl.GetPostSummary(c.ShortCode)
+	c.SourceUrl = summary.DisplayURL
 	if err != nil {
 		dLogger.Errorf("error: %v", err)
 		c.Status = Failed

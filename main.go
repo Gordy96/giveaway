@@ -38,8 +38,20 @@ func main() {
 			return validation.AppendingRule, rule
 		},
 		"FollowsRule": func(i interface{}) (validation.RuleType, validation.IRule) {
-			idi := i.(map[string]interface{})["id"].(interface{})
-			rule := &rules.FollowsRule{Name: "FollowsRule", Id: idi.(string)}
+			rule := &rules.FollowsRule{Name: "FollowsRule"}
+			if x, ok := i.(map[string]interface{})["id"]; ok {
+				rule.Id = x.(interface{}).(string)
+			}
+			if x, ok := i.(map[string]interface{})["username"]; ok {
+				rule.Username = x.(interface{}).(string)
+				cl := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
+				cl.Init()
+				r, e := cl.GetUserInfo(rule.Username)
+				if e != nil {
+					panic(e)
+				}
+				rule.Id = r.Id
+			}
 			return validation.SelectRule, rule
 		},
 		"FollowersRule": func(i interface{}) (validation.RuleType, validation.IRule) {
@@ -141,7 +153,7 @@ func main() {
 						}
 						var task tasks.CommentsTask
 						err = repository2.GetNamedRepositoryInstance("CommentTasks").FindTaskById(bsonx.ObjectID(id), &task)
-						go task.FetchData()
+						go task.DecideWinner()
 						if err != nil {
 							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
@@ -321,5 +333,5 @@ func main() {
 			}
 		}
 	}
-	app.Run("0.0.0.0:80")
+	app.Run("0.0.0.0:8080")
 }
