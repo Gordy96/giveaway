@@ -491,3 +491,69 @@ func (c *Client) GetShortCodeMediaLikers(shortcode string, cursor string) (*stru
 	}
 	return d, nil, cursor
 }
+
+func (c *Client) GetHashTagSummary(tag string) (*structures.HashTagSummary, error) {
+	req, err := c.makeRequest("GET", fmt.Sprintf("https://www.instagram.com/explore/tags/%s", tag), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	respString, err := getResponseString(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	sigStr := respString[strings.Index(respString, "_sharedData =")+13:]
+	sigStr = sigStr[:strings.Index(sigStr, ";</script")]
+
+	var res = &struct {
+		EntryData struct {
+			TagPage []struct {
+				GraphQL struct {
+					HashTag *structures.HashTagSummary `json:"hashtag"`
+				} `json:"graphql"`
+			} `json:"TagPage"`
+		} `json:"entry_data"`
+	}{}
+	err = json.Unmarshal([]byte(sigStr), res)
+	if err != nil {
+		return nil, err
+	}
+	return res.EntryData.TagPage[0].GraphQL.HashTag, nil
+}
+
+func (c *Client) GetPostSummary(shortcode string) (*structures.PostSummary, error) {
+	req, err := c.makeRequest("GET", fmt.Sprintf("https://www.instagram.com/p/%s", shortcode), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	respString, err := getResponseString(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	sigStr := respString[strings.Index(respString, "_sharedData =")+13:]
+	sigStr = sigStr[:strings.Index(sigStr, ";</script")]
+
+	var res = &struct {
+		EntryData struct {
+			PostPage []struct {
+				GraphQL struct {
+					ShortCodeMedia *structures.PostSummary `json:"shortcode_media"`
+				} `json:"graphql"`
+			} `json:"PostPage"`
+		} `json:"entry_data"`
+	}{}
+	err = json.Unmarshal([]byte(sigStr), res)
+	if err != nil {
+		return nil, err
+	}
+	return res.EntryData.PostPage[0].GraphQL.ShortCodeMedia, nil
+}
