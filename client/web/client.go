@@ -493,7 +493,7 @@ func (c *Client) GetShortCodeMediaLikers(shortcode string, cursor string) (*stru
 }
 
 func (c *Client) GetHashTagSummary(tag string) (*structures.HashTagSummary, error) {
-	req, err := c.makeRequest("GET", fmt.Sprintf("https://www.instagram.com/explore/tags/%s", tag), nil)
+	req, err := c.makeRequest("GET", fmt.Sprintf("https://www.instagram.com/explore/tags/%s/", tag), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -526,7 +526,7 @@ func (c *Client) GetHashTagSummary(tag string) (*structures.HashTagSummary, erro
 }
 
 func (c *Client) GetPostSummary(shortcode string) (*structures.PostSummary, error) {
-	req, err := c.makeRequest("GET", fmt.Sprintf("https://www.instagram.com/p/%s", shortcode), nil)
+	req, err := c.makeRequest("GET", fmt.Sprintf("https://www.instagram.com/p/%s/", shortcode), nil)
 	if err != nil {
 		return nil, err
 	}
