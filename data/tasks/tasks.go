@@ -189,7 +189,24 @@ func (c *CommentsTask) FetchData() {
 			Id:      primitive.NewObjectID(),
 			Comment: comment,
 		}
-		store.Save(temp)
+		var shouldAdd bool
+		shouldAdd, err = runRules(c.Rules.AppendingRules, &comment, func(rule validation.IRule, e error) (bool, error) {
+			if e != nil {
+				switch /*e := */ e.(type) {
+				case errors.BeforeMinimumDate:
+					return false, e
+				case errors.AfterMaximumDate:
+					return false, nil
+				}
+			}
+			return false, e
+		})
+		if shouldAdd {
+			store.Save(temp)
+		}
+		if err != nil {
+			return false, nil
+		}
 		return true, nil
 	})
 
@@ -225,7 +242,7 @@ func (c *CommentsTask) DecideWinner() {
 		}
 		var shouldAdd bool
 		var comment = container.Comment
-		shouldAdd, err = runRules(c.Rules.AppendingRules, comment, func(rule validation.IRule, e error) (bool, error) {
+		shouldAdd, err = runRules(c.Rules.AppendingRules, &comment, func(rule validation.IRule, e error) (bool, error) {
 			if e != nil {
 				switch /*e := */ e.(type) {
 				case errors.BeforeMinimumDate:
@@ -236,11 +253,11 @@ func (c *CommentsTask) DecideWinner() {
 			}
 			return false, e
 		})
-		if err != nil {
-			break
-		}
 		if shouldAdd {
 			ret.Add(&comment)
+		}
+		if err != nil {
+			break
 		}
 	}
 	repo := dbRepo.GetNamedRepositoryInstance("CommentTasks")
@@ -262,34 +279,36 @@ func (c *CommentsTask) DecideWinner() {
 	}
 
 	c.Winners = make([]data.CommentWinner, 0)
-	taken := make([]int, 0)
-	for i := 0; i < c.NumWinners; i++ {
-		winnerId, winner, err := filterWinnerComment(ret, c.Rules.SelectRules, taken)
-		taken = append(taken, winnerId)
-		var wSet data.CommentWinner
-		if err != nil {
-			dLogger.Errorf("error: %v", err)
-		}
-
-		if winner != nil {
-			above := make([]*data.Comment, 0)
-			below := make([]*data.Comment, 0)
-
-			for i := winnerId - 1; i >= 0 && i >= winnerId-2; i-- {
-				above = append([]*data.Comment{ret.Get(i).Value.(*data.Comment)}, above...)
-			}
-			for i := winnerId + 1; i < ret.Length() && i <= winnerId+2; i++ {
-				below = append(below, ret.Get(i).Value.(*data.Comment))
+	if ret.LengthNoDuplicates() >= c.NumWinners {
+		taken := make([]int, 0)
+		for i := 0; i < c.NumWinners; i++ {
+			winnerId, winner, err := filterWinnerComment(ret, c.Rules.SelectRules, taken)
+			taken = append(taken, winnerId)
+			var wSet data.CommentWinner
+			if err != nil {
+				dLogger.Errorf("error: %v", err)
 			}
 
-			wSet.Winner = winner
-			wSet.Above = above
-			wSet.Below = below
+			if winner != nil {
+				above := make([]*data.Comment, 0)
+				below := make([]*data.Comment, 0)
 
-			wSet.Position = winnerId
-			c.Winners = append(c.Winners, wSet)
-		} else {
-			break
+				for i := winnerId - 1; i >= 0 && i >= winnerId-2; i-- {
+					above = append([]*data.Comment{ret.Get(i).Value.(*data.Comment)}, above...)
+				}
+				for i := winnerId + 1; i < ret.Length() && i <= winnerId+2; i++ {
+					below = append(below, ret.Get(i).Value.(*data.Comment))
+				}
+
+				wSet.Winner = winner
+				wSet.Above = above
+				wSet.Below = below
+
+				wSet.Position = winnerId
+				c.Winners = append(c.Winners, wSet)
+			} else {
+				break
+			}
 		}
 	}
 
@@ -351,7 +370,24 @@ func (h *HashTagTask) FetchData() {
 			Id:     primitive.NewObjectID(),
 			Post:   media,
 		}
-		store.Save(temp)
+		var shouldAdd bool
+		shouldAdd, err = runRules(h.Rules.AppendingRules, &media, func(rule validation.IRule, e error) (bool, error) {
+			if e != nil {
+				switch /*e := */ e.(type) {
+				case errors.BeforeMinimumDate:
+					return false, e
+				case errors.AfterMaximumDate:
+					return false, nil
+				}
+			}
+			return false, e
+		})
+		if shouldAdd {
+			store.Save(temp)
+		}
+		if err != nil {
+			return false, nil
+		}
 		return true, nil
 	})
 
@@ -387,7 +423,7 @@ func (h *HashTagTask) DecideWinner() {
 		}
 		var shouldAdd bool
 		var post = container.Post
-		shouldAdd, err = runRules(h.Rules.AppendingRules, post, func(rule validation.IRule, e error) (bool, error) {
+		shouldAdd, err = runRules(h.Rules.AppendingRules, &post, func(rule validation.IRule, e error) (bool, error) {
 			if e != nil {
 				switch /*e := */ e.(type) {
 				case errors.BeforeMinimumDate:
@@ -398,11 +434,11 @@ func (h *HashTagTask) DecideWinner() {
 			}
 			return false, e
 		})
-		if err != nil {
-			break
-		}
 		if shouldAdd {
 			ret.Add(&post)
+		}
+		if err != nil {
+			break
 		}
 	}
 	repo := dbRepo.GetNamedRepositoryInstance("HashTagTasks")
@@ -424,18 +460,20 @@ func (h *HashTagTask) DecideWinner() {
 	}
 
 	h.Winners = make([]data.TagMedia, 0)
-	taken := make([]int, 0)
-	for i := 0; i < h.NumWinners; i++ {
+	if ret.LengthNoDuplicates() >= h.NumWinners {
+		taken := make([]int, 0)
+		for i := 0; i < h.NumWinners; i++ {
 
-		id, winner, err := filterWinnerHashTag(ret, h.Rules.SelectRules, taken)
-		taken = append(taken, id)
-		if err != nil {
-			dLogger.Errorf("error: %v", err)
-		}
-		if winner != nil {
-			h.Winners = append(h.Winners, *winner)
-		} else {
-			break
+			id, winner, err := filterWinnerHashTag(ret, h.Rules.SelectRules, taken)
+			taken = append(taken, id)
+			if err != nil {
+				dLogger.Errorf("error: %v", err)
+			}
+			if winner != nil {
+				h.Winners = append(h.Winners, *winner)
+			} else {
+				break
+			}
 		}
 	}
 
@@ -570,7 +608,7 @@ func (s *StoriesTask) DecideWinner() {
 		}
 		var shouldAdd bool
 		var stry = container.Story
-		shouldAdd, err = runRules(s.Rules.AppendingRules, stry, func(rule validation.IRule, e error) (bool, error) {
+		shouldAdd, err = runRules(s.Rules.AppendingRules, &stry, func(rule validation.IRule, e error) (bool, error) {
 			if e != nil {
 				switch /*e := */ e.(type) {
 				case errors.BeforeMinimumDate:

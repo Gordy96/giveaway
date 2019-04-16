@@ -48,3 +48,10 @@ type ValidationCriticalFailure struct {
 func (e ValidationCriticalFailure) Error() string {
 	return "critical error while processing"
 }
+
+type EndOfListError struct {
+}
+
+func (e EndOfListError) Error() string {
+	return "reached end of a list"
+}

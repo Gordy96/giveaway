@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"giveaway/data"
 	httpErrors "giveaway/data/errors"
+	"giveaway/data/owner"
 	"giveaway/instagram/account"
 	"giveaway/instagram/structures"
 	"giveaway/utils"
@@ -188,32 +189,71 @@ func (c *Client) Login() (bool, error) {
 }
 
 func (c *Client) QueryComments(code string, cb func(data.Comment) (bool, error)) error {
-	cursor := NewCommentCursor(c, code)
-	resChan, errChan := cursor.Next()
+	var err error
+	var cursor = ""
+	var res *structures.ShortCodeMediaResponse
+	suspender := defaultSuspender{}
 	for {
-		select {
-		case post := <-resChan:
-			if r, err := cb(post); !r {
-				return err
+		res, err, cursor = c.GetShortCodeMediaInfo(code, cursor)
+		if res != nil && res.Data.ShortCodeMedia != nil {
+			for _, e := range res.Data.ShortCodeMedia.EdgeMediaToComment.Edges {
+				comment := data.Comment{
+					Id:        e.Node.ID,
+					Text:      e.Node.Text,
+					CreatedAt: e.Node.CreatedAt,
+					Owner: owner.Owner{
+						Id:       e.Node.Owner.ID,
+						Username: e.Node.Owner.Username,
+					},
+				}
+				if r, err := cb(comment); !r {
+					return err
+				}
 			}
-		case err := <-errChan:
+		}
+		if err != nil {
+			if _, is := err.(httpErrors.EndOfListError); is {
+				return nil
+			}
 			return err
 		}
+		suspender.Sleep()
 	}
 }
 
 func (c *Client) QueryTag(tag string, cb func(data.TagMedia) (bool, error)) error {
-	cursor := NewTagCursor(c, tag)
-	resChan, errChan := cursor.Next()
+	var err error
+	var cursor = ""
+	var res *structures.HashTagResponse
+	suspender := defaultSuspender{}
 	for {
-		select {
-		case post := <-resChan:
-			if r, err := cb(post); !r {
-				return err
+		res, err, cursor = c.GetTagPosts(tag, cursor)
+		if res != nil && res.Data.HashTag != nil {
+			for _, e := range res.Data.HashTag.EdgeHashTagToMedia.Edges {
+				post := data.TagMedia{
+					Id:           e.Node.ID,
+					Type:         e.Node.Typename,
+					ShortCode:    e.Node.ShortCode,
+					LikeCount:    int32(e.Node.EdgeLikedBy.Count),
+					CommentCount: int32(e.Node.EdgeMediaToComment.Count),
+					TakenAt:      e.Node.TakenAtTimestamp,
+					Owner: owner.Owner{
+						Id:       e.Node.Owner.ID,
+						Username: "",
+					},
+				}
+				if r, err := cb(post); !r {
+					return err
+				}
 			}
-		case err := <-errChan:
+		}
+		if err != nil {
+			if _, is := err.(httpErrors.EndOfListError); is {
+				return nil
+			}
 			return err
 		}
+		suspender.Sleep()
 	}
 }
 
@@ -318,7 +358,7 @@ func (c *Client) GetShortCodeMediaInfo(shortcode string, cursor string) (*struct
 	if hasNext {
 		cursor = d.Data.ShortCodeMedia.EdgeMediaToComment.PageInfo.EndCursor
 	} else {
-		cursor = ""
+		return nil, httpErrors.EndOfListError{}, ""
 	}
 
 	return d, nil, cursor
@@ -381,7 +421,7 @@ func (c *Client) GetTagPosts(tag string, cursor string) (*structures.HashTagResp
 	if hasNext {
 		cursor = d.Data.HashTag.EdgeHashTagToMedia.PageInfo.EndCursor
 	} else {
-		cursor = ""
+		return nil, httpErrors.EndOfListError{}, ""
 	}
 	return d, nil, cursor
 }
@@ -443,7 +483,7 @@ func (c *Client) GetShortCodeMediaLikers(shortcode string, cursor string) (*stru
 	if hasNext {
 		cursor = d.Data.ShortCodeMedia.EdgeLikedBy.PageInfo.EndCursor
 	} else {
-		cursor = ""
+		return nil, httpErrors.EndOfListError{}, ""
 	}
 	return d, nil, cursor
 }

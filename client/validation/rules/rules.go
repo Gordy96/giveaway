@@ -42,10 +42,10 @@ func (d DateRule) Validate(i interface{}) (bool, error) {
 		return false, errors.ValidationCriticalFailure{}
 	}
 	examined := e.GetCreationDate()
-	if d.Limits[1] > 0 && examined > d.Limits[1] {
+	if d.Limits[1] > 0 && examined >= d.Limits[1] {
 		return false, errors.AfterMaximumDate{}
 	}
-	if examined < d.Limits[0] {
+	if examined <= d.Limits[0] {
 		return false, errors.BeforeMinimumDate{}
 	}
 	return true, nil
