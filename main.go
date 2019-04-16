@@ -1,30 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"giveaway/client/validation"
 	"giveaway/client/validation/rules"
-	"giveaway/client/web"
 	"giveaway/data/tasks"
 	"giveaway/http/requests"
 	"giveaway/http/responses"
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/solver"
-	"giveaway/utils"
 	repository2 "giveaway/utils/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 func main() {
-	cl := web.NewWebClient(&utils.UserAgentGenerator{}, "http://127.0.0.1:8888")
-	r, err := cl.GetPostSummary("BvoUFdrH0zf")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Print(r)
-	return
 	validation.RegisterRuleConstructor(validation.RuleConstructorMap{
 		"DateRule": func(i interface{}) (validation.RuleType, validation.IRule) {
 			tArr := i.(map[string]interface{})["limits"].([]interface{})
