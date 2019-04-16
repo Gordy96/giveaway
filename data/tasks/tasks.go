@@ -363,8 +363,8 @@ func (h *HashTagTask) FetchData() {
 	}
 
 	store := dbRepo.GetNamedRepositoryInstance("Posts")
-
-	err = cl.QueryTag(h.HashTag, func(media data.TagMedia) (bool, error) {
+	var dupes map[string]bool = make(map[string]bool)
+	err = cl.QueryTag(h.HashTag, func(media data.TagMedia, counter *int) (bool, error) {
 		temp := data.PostContainer{
 			TaskId: h.Id,
 			Id:     primitive.NewObjectID(),
@@ -375,15 +375,23 @@ func (h *HashTagTask) FetchData() {
 			if e != nil {
 				switch /*e := */ e.(type) {
 				case errors.BeforeMinimumDate:
-					return false, e
+					return false, nil
 				case errors.AfterMaximumDate:
+					if _, p := dupes[media.Id]; !p {
+						dupes[media.Id] = true
+						*counter++
+					}
 					return false, nil
 				}
 			}
 			return false, e
 		})
 		if shouldAdd {
-			store.Save(temp)
+			if _, p := dupes[media.Id]; !p {
+				store.Save(temp)
+				dupes[media.Id] = true
+				*counter++
+			}
 		}
 		if err != nil {
 			return false, nil

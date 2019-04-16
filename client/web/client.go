@@ -221,7 +221,7 @@ func (c *Client) QueryComments(code string, cb func(data.Comment) (bool, error))
 	}
 }
 
-func (c *Client) QueryTag(tag string, cb func(data.TagMedia) (bool, error)) error {
+func (c *Client) QueryTag(tag string, cb func(data.TagMedia, *int) (bool, error)) error {
 	var err error
 	var cursor = ""
 	var res *structures.HashTagResponse
@@ -229,6 +229,7 @@ func (c *Client) QueryTag(tag string, cb func(data.TagMedia) (bool, error)) erro
 	for {
 		res, err, cursor = c.GetTagPosts(tag, cursor)
 		if res != nil && res.Data.HashTag != nil {
+			var counter int = 0
 			for _, e := range res.Data.HashTag.EdgeHashTagToMedia.Edges {
 				post := data.TagMedia{
 					Id:           e.Node.ID,
@@ -242,9 +243,12 @@ func (c *Client) QueryTag(tag string, cb func(data.TagMedia) (bool, error)) erro
 						Username: "",
 					},
 				}
-				if r, err := cb(post); !r {
+				if r, err := cb(post, &counter); !r {
 					return err
 				}
+			}
+			if counter == 0 {
+				return nil
 			}
 		}
 		if err != nil {
