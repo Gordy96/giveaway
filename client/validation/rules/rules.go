@@ -53,8 +53,8 @@ func (d DateRule) Validate(i interface{}) (bool, error) {
 
 type FollowsRule struct {
 	Name     string `json:"name" bson:"name"`
-	Id       string `json:"id" bson:"id"`
-	Username string `json:"username" bson:"username"`
+	Id       string `json:"id, omitempty" bson:"id, omitempty"`
+	Username string `json:"username, omitempty" bson:"username, omitempty"`
 }
 
 func (f FollowsRule) String() string {

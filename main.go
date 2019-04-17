@@ -11,6 +11,7 @@ import (
 	"giveaway/http/responses"
 	"giveaway/instagram/account/repository"
 	"giveaway/instagram/solver"
+	"giveaway/queue"
 	"giveaway/utils"
 	repository2 "giveaway/utils/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,6 +19,8 @@ import (
 )
 
 func main() {
+	//Run queue instance
+	queue.GetGlobalInstance(10).Run()
 	validation.RegisterRuleConstructor(validation.RuleConstructorMap{
 		"DateRule": func(i interface{}) (validation.RuleType, validation.IRule) {
 			tArr := i.(map[string]interface{})["limits"].([]interface{})
@@ -42,7 +45,7 @@ func main() {
 			if x, ok := i.(map[string]interface{})["id"]; ok {
 				rule.Id = x.(interface{}).(string)
 			}
-			if x, ok := i.(map[string]interface{})["username"]; ok {
+			if x, ok := i.(map[string]interface{})["username"]; rule.Id == "" && ok {
 				rule.Username = x.(interface{}).(string)
 				cl := web.NewWebClient(&utils.UserAgentGenerator{}, proxies.GetGlobalInstance().GetNext())
 				cl.Init()
@@ -109,9 +112,8 @@ func main() {
 			return validation.SelectRule, rule
 		},
 	})
-
-	solv := solver.GetInstance()
-	solv.Run()
+	//Run solver instance
+	solver.GetInstance().Run()
 	app := gin.Default()
 	api := app.Group("/api")
 	{
@@ -153,7 +155,8 @@ func main() {
 						}
 						var task tasks.CommentsTask
 						err = repository2.GetNamedRepositoryInstance("CommentTasks").FindTaskById(bsonx.ObjectID(id), &task)
-						go task.DecideWinner()
+
+						queue.GetGlobalInstance().Enqueue(&tasks.DecideCommentsWinnerCommand{Task: task})
 						if err != nil {
 							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
@@ -199,8 +202,7 @@ func main() {
 						if err != nil {
 							panic(err)
 						}
-
-						go task.FetchData()
+						queue.GetGlobalInstance().Enqueue(&tasks.FetchCommentDataCommand{Task: *task})
 						c.JSON(200, responses.NewSuccessfulCommentsTaskJsonResponse(*task))
 					})
 				}
@@ -216,7 +218,7 @@ func main() {
 
 						var task tasks.HashTagTask
 						err = repository2.GetNamedRepositoryInstance("HashTagTasks").FindTaskById(bsonx.ObjectID(id), &task)
-						go task.DecideWinner()
+						queue.GetGlobalInstance().Enqueue(&tasks.DecideHashTagWinnerCommand{Task: task})
 						if err != nil {
 							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
@@ -261,7 +263,7 @@ func main() {
 							panic(err)
 						}
 
-						go task.FetchData()
+						queue.GetGlobalInstance().Enqueue(&tasks.FetchHashTagDataCommand{Task: *task})
 						c.JSON(200, responses.NewSuccessfulHashTagTaskJsonResponse(*task))
 					})
 				}
@@ -275,8 +277,8 @@ func main() {
 							return
 						}
 						var task tasks.StoriesTask
-						err = repository2.GetNamedRepositoryInstance("HashTagStoryTasks").FindTaskById(bsonx.ObjectID(id), &task)
-						go task.DecideWinner()
+						err = repository2.GetNamedRepositoryInstance("HashTagStoryTasks").FindTaskById(bsonx.ObjectID(id), task)
+						queue.GetGlobalInstance().Enqueue(&tasks.DecideStoriesWinnerCommand{Task: task})
 						if err != nil {
 							c.JSON(404, responses.NewNotFoundJsonResponse())
 							return
@@ -326,7 +328,7 @@ func main() {
 							panic(err)
 						}
 
-						go task.FetchData()
+						queue.GetGlobalInstance().Enqueue(&tasks.FetchStoriesDataCommand{Task: *task})
 						c.JSON(200, responses.NewSuccessfulHashTagStoryTaskJsonResponse(*task))
 					})
 				}

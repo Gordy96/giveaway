@@ -145,6 +145,23 @@ type BaseTaskModel struct {
 	NumWinners int                       `json:"num_winners"`
 }
 
+type FetchCommentDataCommand struct {
+	Task CommentsTask
+}
+
+func (c *FetchCommentDataCommand) Handle() {
+	c.Task.FetchData()
+	c.Task.DecideWinner()
+}
+
+type DecideCommentsWinnerCommand struct {
+	Task CommentsTask
+}
+
+func (d *DecideCommentsWinnerCommand) Handle() {
+	d.Task.DecideWinner()
+}
+
 type CommentsTask struct {
 	BaseTaskModel `json:",inline" bson:",inline"`
 	ShortCode     string               `json:"shortcode" bson:"shortcode"`
@@ -225,7 +242,6 @@ func (c *CommentsTask) FetchData() {
 	} else {
 		c.Status = Complete
 		repo.Save(c)
-		c.DecideWinner()
 	}
 }
 
@@ -332,6 +348,23 @@ func (c *CommentsTask) DecideWinner() {
 	if err != nil {
 		dLogger.Errorf("error: %v", err)
 	}
+}
+
+type FetchHashTagDataCommand struct {
+	Task HashTagTask
+}
+
+func (c *FetchHashTagDataCommand) Handle() {
+	c.Task.FetchData()
+	c.Task.DecideWinner()
+}
+
+type DecideHashTagWinnerCommand struct {
+	Task HashTagTask
+}
+
+func (d *DecideHashTagWinnerCommand) Handle() {
+	d.Task.DecideWinner()
 }
 
 type HashTagTask struct {
@@ -510,6 +543,23 @@ func (h *HashTagTask) DecideWinner() {
 type StoryWinner struct {
 	Story stories.StoryItem `json:"story" bson:"story"`
 	Data  []byte            `json:"data" bson:"data"`
+}
+
+type FetchStoriesDataCommand struct {
+	Task StoriesTask
+}
+
+func (c *FetchStoriesDataCommand) Handle() {
+	c.Task.FetchData()
+	c.Task.DecideWinner()
+}
+
+type DecideStoriesWinnerCommand struct {
+	Task StoriesTask
+}
+
+func (d *DecideStoriesWinnerCommand) Handle() {
+	d.Task.DecideWinner()
 }
 
 type StoriesTask struct {
